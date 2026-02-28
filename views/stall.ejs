@@ -1,0 +1,285 @@
+<%- include('partials/header', { title: stall.name }) %>
+<%- include('partials/navbar') %>
+
+<main class="flex-1">
+
+  <!-- Stall Header -->
+  <section class="bg-white border-b border-gray-100 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <!-- Breadcrumb -->
+          <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+            <a href="/" class="hover:text-orange-500 transition-colors">Home</a>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <a href="/canteen/<%= stall.canteen_id %>" class="hover:text-orange-500 transition-colors"><%= stall.canteen_name %></a>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+            <span class="text-gray-700 font-medium"><%= stall.name %></span>
+          </div>
+          <h1 class="font-display text-3xl font-bold text-gray-900"><%= stall.name %></h1>
+          <p class="text-gray-500 mt-1 text-sm max-w-xl"><%= stall.description %></p>
+          <div class="flex items-center gap-4 mt-3">
+            <span class="flex items-center gap-1.5 text-sm text-gray-500">
+              <i class="fa-solid fa-clock text-orange-400"></i> ~<%= stall.avg_prep_time %> min prep time
+            </span>
+            <span class="flex items-center gap-1.5 text-sm text-gray-500">
+              <i class="fa-solid fa-fire text-orange-400"></i>
+              <span class="font-medium text-orange-600"><%= activeOrders %></span> active orders
+            </span>
+          </div>
+        </div>
+        <% if (user) { %>
+          <a href="/cart" class="btn-primary relative" id="go-to-cart-btn" style="display:none">
+            <i class="fa-solid fa-cart-shopping mr-2"></i>View Cart
+            <span id="stall-cart-count" class="ml-2 bg-white text-orange-600 text-xs font-bold rounded-full px-2 py-0.5">0</span>
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Nav -->
+  <div class="bg-white border-b border-gray-100 sticky top-16 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex gap-1 overflow-x-auto py-2 scrollbar-hide">
+        <% Object.keys(menuGrouped).forEach(cat => { %>
+          <button onclick="scrollToCategory('<%= cat %>')"
+            class="category-pill flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium text-gray-600
+                   hover:bg-orange-50 hover:text-orange-700 transition-all border border-transparent
+                   hover:border-orange-200">
+            <%= cat %>
+          </button>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- Menu Items (2/3 width on desktop) -->
+      <div class="lg:col-span-2 space-y-10">
+        <% if (Object.keys(menuGrouped).length === 0) { %>
+          <div class="text-center py-20">
+            <i class="fa-solid fa-plate-wheat text-gray-300 text-5xl mb-4"></i>
+            <p class="text-gray-500">No menu items available yet.</p>
+          </div>
+        <% } %>
+
+        <% Object.entries(menuGrouped).forEach(([category, items]) => { %>
+          <section id="cat-<%= category.replace(/\s+/g,'-') %>">
+            <div class="flex items-center gap-3 mb-4">
+              <h2 class="font-display text-xl font-bold text-gray-900"><%= category %></h2>
+              <div class="flex-1 h-px bg-gray-100"></div>
+              <span class="text-xs text-gray-400 font-medium"><%= items.length %> item<%= items.length !== 1 ? 's' : '' %></span>
+            </div>
+
+            <div class="space-y-3">
+              <% items.forEach(item => { %>
+                <div class="card flex gap-4 p-4 <%= !item.is_available ? 'opacity-60' : '' %>"
+                     data-item-id="<%= item.id %>" data-stall-id="<%= stall.id %>">
+
+                  <!-- Image -->
+                  <% if (item.image_url) { %>
+                    <div class="w-24 h-24 flex-shrink-0 rounded-xl overflow-hidden">
+                      <img src="<%= item.image_url %>" alt="<%= item.name %>"
+                        class="w-full h-full object-cover" />
+                    </div>
+                  <% } %>
+
+                  <!-- Info -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-start gap-2 flex-wrap">
+                      <% if (item.is_veg) { %>
+                        <span class="badge-veg"><i class="fa-solid fa-circle text-[8px]"></i>Veg</span>
+                      <% } else { %>
+                        <span class="badge-nonveg"><i class="fa-solid fa-circle text-[8px]"></i>Non-Veg</span>
+                      <% } %>
+                      <% if (!item.is_available) { %>
+                        <span class="text-xs text-red-500 font-medium bg-red-50 px-2 py-0.5 rounded-full">Unavailable</span>
+                      <% } %>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mt-1"><%= item.name %></h3>
+                    <% if (item.description) { %>
+                      <p class="text-xs text-gray-500 mt-0.5 line-clamp-2"><%= item.description %></p>
+                    <% } %>
+                    <div class="flex items-center gap-3 mt-2">
+                      <span class="text-orange-600 font-bold text-lg">₹<%= parseFloat(item.price).toFixed(0) %></span>
+                      <span class="text-xs text-gray-400 flex items-center gap-1">
+                        <i class="fa-solid fa-clock"></i><%= item.prep_time_mins %> min
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Add to cart -->
+                  <div class="flex-shrink-0 flex items-center">
+                    <% if (!user) { %>
+                      <a href="/auth/login"
+                        class="border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all">
+                        Login to Order
+                      </a>
+                    <% } else if (!item.is_available) { %>
+                      <button disabled class="bg-gray-100 text-gray-400 font-medium text-sm px-4 py-2 rounded-xl cursor-not-allowed">
+                        Unavailable
+                      </button>
+                    <% } else { %>
+                      <!-- Counter widget per item -->
+                      <div id="counter-<%= item.id %>" class="hidden items-center gap-2">
+                        <button onclick="changeQty('<%= item.id %>', -1)"
+                          class="w-8 h-8 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-full font-bold text-lg leading-none flex items-center justify-center transition-colors">−</button>
+                        <span id="qty-<%= item.id %>" class="font-bold text-gray-900 w-5 text-center">0</span>
+                        <button onclick="changeQty('<%= item.id %>', 1)"
+                          class="w-8 h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-bold text-lg leading-none flex items-center justify-center transition-colors">+</button>
+                      </div>
+                      <button id="add-btn-<%= item.id %>"
+                        onclick="addToCart('<%= item.id %>')"
+                        class="border-2 border-orange-500 text-orange-600 hover:bg-orange-500 hover:text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all">
+                        + Add
+                      </button>
+                    <% } %>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </section>
+        <% }) %>
+      </div>
+
+      <!-- Sticky sidebar (desktop) -->
+      <div class="hidden lg:block">
+        <div class="sticky top-32 space-y-4">
+          <!-- Queue info -->
+          <div class="card p-5">
+            <h3 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-users text-orange-500"></i> Live Queue
+            </h3>
+            <div class="text-center py-3">
+              <p class="text-4xl font-display font-bold text-orange-600"><%= activeOrders %></p>
+              <p class="text-sm text-gray-500 mt-1">orders ahead of you</p>
+            </div>
+            <div class="bg-orange-50 rounded-xl p-3 mt-2 text-xs text-gray-600 leading-relaxed">
+              <i class="fa-solid fa-clock text-orange-400 mr-1.5"></i>
+              Estimated wait: ~<%= Math.max(5, activeOrders * stall.avg_prep_time) %> min
+            </div>
+          </div>
+
+          <!-- Stall info -->
+          <div class="card p-5">
+            <h3 class="font-semibold text-gray-900 mb-3">Stall Info</h3>
+            <ul class="space-y-2 text-sm text-gray-600">
+              <li class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-orange-400 w-4"></i><%= stall.canteen_name %></li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-clock text-orange-400 w-4"></i>~<%= stall.avg_prep_time %> min prep</li>
+              <li class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-green-500 w-4"></i>Open & accepting orders</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Toast notification -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden">
+  <div class="bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2">
+    <i class="fa-solid fa-check-circle text-green-400"></i>
+    <span id="toast-msg">Item added to cart!</span>
+  </div>
+</div>
+
+<!-- Chatbot -->
+<%- include('partials/chatbot', { stallId: stall.id, stallName: stall.name }) %>
+
+<script>
+const STALL_ID = '<%= stall.id %>';
+let cartQtys   = {};   // { itemId: quantity }
+let cartTotal  = 0;
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.querySelector('i').className = isError
+    ? 'fa-solid fa-circle-xmark text-red-400'
+    : 'fa-solid fa-check-circle text-green-400';
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+async function addToCart(itemId) {
+  <% if (!user) { %>
+    window.location.href = '/auth/login'; return;
+  <% } %>
+  try {
+    const res  = await fetch('/cart/add', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ menuItemId: itemId, quantity: 1 })
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast(data.error || 'Could not add item', true); return; }
+
+    cartQtys[itemId] = 1;
+    document.getElementById('add-btn-' + itemId).classList.add('hidden');
+    const counter = document.getElementById('counter-' + itemId);
+    counter.classList.remove('hidden');
+    counter.classList.add('flex');
+    document.getElementById('qty-' + itemId).textContent = 1;
+
+    updateCartBadge(data.cartCount);
+    if (window.updateCartBadge) window.updateCartBadge(data.cartCount);
+    showCartBtn(data.cartCount);
+    showToast('Added to cart!');
+  } catch (e) { showToast('Something went wrong', true); }
+}
+
+async function changeQty(itemId, delta) {
+  const current = cartQtys[itemId] || 0;
+  const newQty  = current + delta;
+
+  if (newQty <= 0) {
+    const res  = await fetch('/cart/remove', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ menuItemId: itemId })
+    });
+    const data = await res.json();
+    cartQtys[itemId] = 0;
+    document.getElementById('counter-' + itemId).classList.add('hidden');
+    document.getElementById('counter-' + itemId).classList.remove('flex');
+    document.getElementById('add-btn-' + itemId).classList.remove('hidden');
+    if (window.updateCartBadge) window.updateCartBadge(data.cartCount);
+    showCartBtn(data.cartCount);
+  } else {
+    const res  = await fetch('/cart/update', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ menuItemId: itemId, quantity: newQty })
+    });
+    const data = await res.json();
+    cartQtys[itemId] = newQty;
+    document.getElementById('qty-' + itemId).textContent = newQty;
+    if (window.updateCartBadge) window.updateCartBadge(data.cartCount);
+    showCartBtn(data.cartCount);
+  }
+}
+
+function showCartBtn(count) {
+  const btn = document.getElementById('go-to-cart-btn');
+  if (!btn) return;
+  if (count > 0) {
+    btn.style.display = 'flex';
+    const badge = document.getElementById('stall-cart-count');
+    if (badge) badge.textContent = count;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+function scrollToCategory(cat) {
+  const id = 'cat-' + cat.replace(/\s+/g, '-');
+  const el = document.getElementById(id);
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('bg-orange-100','text-orange-700','border-orange-200'));
+  event.target.classList.add('bg-orange-100','text-orange-700','border-orange-200');
+}
+</script>
+
+<%- include('partials/footer') %>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bill #<%= order.uuid.slice(0,8).toUpperCase() %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; background: #fff; max-width: 320px; margin: 0 auto; padding: 20px; }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .divider { border-top: 1px dashed #000; margin: 10px 0; }
+    .divider-solid { border-top: 2px solid #000; margin: 10px 0; }
+    .flex { display: flex; justify-content: space-between; }
+    .logo { font-size: 18px; font-weight: bold; letter-spacing: 2px; }
+    .bill-id { font-size: 10px; color: #333; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 10px; text-transform: uppercase; padding: 4px 0; border-bottom: 1px dashed #000; }
+    td { padding: 4px 0; font-size: 11px; }
+    td:last-child { text-align: right; }
+    th:last-child { text-align: right; }
+    .total-row td { font-weight: bold; font-size: 13px; border-top: 2px solid #000; padding-top: 8px; }
+    .footer-note { font-size: 9px; text-align: center; color: #555; margin-top: 5px; }
+    @media print {
+      body { max-width: 100%; padding: 0; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="center" style="margin-bottom: 12px;">
+    <div class="logo">KLE CANTEEN</div>
+    <div style="font-size: 10px; color: #555;">KLE Technological University</div>
+    <div style="font-size: 10px; margin-top: 2px;"><%= stall.name %></div>
+  </div>
+
+  <div class="divider-solid"></div>
+
+  <!-- Bill info -->
+  <div class="flex" style="margin-bottom: 4px;">
+    <span class="bold">BILL</span>
+    <span class="bill-id">#<%= order.uuid.slice(0,8).toUpperCase() %></span>
+  </div>
+  <div class="flex" style="margin-bottom: 2px; font-size: 10px;">
+    <span>Date:</span>
+    <span><%= new Date(order.created_at).toLocaleDateString('en-IN') %></span>
+  </div>
+  <div class="flex" style="font-size: 10px;">
+    <span>Time:</span>
+    <span><%= new Date(order.created_at).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) %></span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Customer -->
+  <div style="font-size: 10px; margin-bottom: 4px;">
+    <span class="bold">Customer: </span><%= order.user_name %>
+  </div>
+  <% if (order.user_phone) { %>
+    <div style="font-size: 10px; margin-bottom: 4px;">
+      <span class="bold">Phone: </span><%= order.user_phone %>
+    </div>
+  <% } %>
+
+  <div class="divider"></div>
+
+  <!-- Items table -->
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th style="text-align:center;">Qty</th>
+        <th style="text-align:right;">Rate</th>
+        <th>Amt</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(item => { %>
+        <tr>
+          <td style="max-width: 110px; word-wrap: break-word;"><%= item.item_name %></td>
+          <td style="text-align:center;"><%= item.quantity %></td>
+          <td style="text-align:right;">₹<%= parseFloat(item.price_at_order).toFixed(0) %></td>
+          <td>₹<%= (item.quantity * item.price_at_order).toFixed(0) %></td>
+        </tr>
+      <% }) %>
+      <tr class="total-row">
+        <td colspan="3">TOTAL</td>
+        <td>₹<%= parseFloat(order.total_amount).toFixed(0) %></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <!-- Payment -->
+  <div class="flex" style="font-size: 10px; margin-bottom: 3px;">
+    <span>Payment Mode:</span>
+    <span>Online (Razorpay)</span>
+  </div>
+  <div class="flex" style="font-size: 9px;">
+    <span>Payment ID:</span>
+    <span style="max-width: 160px; word-break: break-all; text-align: right;"><%= order.payment_id %></span>
+  </div>
+
+  <div class="divider-solid"></div>
+
+  <!-- Footer -->
+  <div class="center">
+    <div style="font-size: 13px; margin: 6px 0;">THANK YOU!</div>
+    <div class="footer-note">Please visit again</div>
+    <div class="footer-note">KLE Technological University Campus Canteen</div>
+    <div class="footer-note" style="margin-top: 8px; font-size: 9px;">
+      *** This is a computer generated bill ***
+    </div>
+  </div>
+
+  <!-- Print button (hidden on print) -->
+  <div class="no-print" style="text-align:center; margin-top: 20px;">
+    <button onclick="window.print()"
+      style="background: #f97316; color: white; border: none; padding: 10px 30px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: bold;">
+      🖨️ Print Bill
+    </button>
+    <button onclick="window.close()"
+      style="background: #eee; color: #333; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-left: 10px;">
+      Close
+    </button>
+  </div>
+
+</body>
+</html>

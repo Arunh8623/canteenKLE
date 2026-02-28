@@ -1,0 +1,154 @@
+
+<div id="chatbot-widget" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+
+  <!-- Chat window -->
+  <div id="chat-window"
+    class="hidden w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-orange-100 flex flex-col overflow-hidden animate-slide-up"
+    style="max-height: 520px;">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-orange-500 to-amber-400 px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+          <i class="fa-solid fa-robot text-white text-sm"></i>
+        </div>
+        <div>
+          <p class="font-semibold text-white text-sm"><%= stallName %> Assistant</p>
+          <p class="text-orange-100 text-xs">Ask me anything about the menu!</p>
+        </div>
+      </div>
+      <button onclick="toggleChat()" class="text-white/80 hover:text-white transition-colors">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50" style="min-height:280px; max-height:340px;">
+      <div class="flex gap-2">
+        <div class="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <i class="fa-solid fa-robot text-orange-500 text-xs"></i>
+        </div>
+        <div class="bg-white rounded-2xl rounded-tl-none px-3 py-2 text-sm text-gray-700 shadow-sm max-w-[85%]">
+          Hi! 👋 I'm your menu assistant. Ask me things like:<br/>
+          <span class="text-orange-600 font-medium">"What's under ₹40?"</span><br/>
+          <span class="text-orange-600 font-medium">"Any veg options?"</span><br/>
+          <span class="text-orange-600 font-medium">"What's popular here?"</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="p-3 bg-white border-t border-gray-100 flex gap-2">
+      <input id="chat-input" type="text" placeholder="Ask about the menu..."
+        class="input-field text-sm py-2"
+        onkeydown="if(event.key==='Enter') sendChat()" />
+      <button onclick="sendChat()"
+        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-xl transition-colors flex-shrink-0">
+        <i class="fa-solid fa-paper-plane text-sm"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toggle button -->
+  <button onclick="toggleChat()" id="chat-toggle-btn"
+    class="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-400 rounded-full shadow-lg hover:shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95">
+    <i class="fa-solid fa-comment-dots text-white text-xl" id="chat-icon"></i>
+  </button>
+</div>
+
+<script>
+  const STALL_ID   = '<%= stallId %>';
+  const STALL_NAME = '<%= stallName %>';
+  let chatHistory  = [];
+  let chatOpen     = false;
+
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    const win  = document.getElementById('chat-window');
+    const icon = document.getElementById('chat-icon');
+    if (chatOpen) {
+      win.classList.remove('hidden');
+      win.classList.add('flex', 'flex-col');
+      icon.className = 'fa-solid fa-xmark text-white text-xl';
+      document.getElementById('chat-input').focus();
+    } else {
+      win.classList.add('hidden');
+      win.classList.remove('flex', 'flex-col');
+      icon.className = 'fa-solid fa-comment-dots text-white text-xl';
+    }
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg   = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+
+    appendMessage('user', msg);
+    appendTyping();
+
+    try {
+      const res = await fetch('/ai/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stallId: STALL_ID, message: msg, history: chatHistory })
+      });
+      const data = await res.json();
+      removeTyping();
+      const reply = data.reply || 'Sorry, I could not process that. Please try again.';
+      appendMessage('bot', reply);
+      chatHistory.push({ role: 'user', content: msg });
+      chatHistory.push({ role: 'assistant', content: reply });
+      if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+    } catch {
+      removeTyping();
+      appendMessage('bot', 'Sorry, I\'m having trouble connecting. Please try again.');
+    }
+  }
+
+  function appendMessage(role, text) {
+    const container = document.getElementById('chat-messages');
+    const div       = document.createElement('div');
+    div.className   = 'flex gap-2 ' + (role === 'user' ? 'flex-row-reverse' : '');
+
+    const avatar = document.createElement('div');
+    avatar.className = 'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ' +
+      (role === 'user' ? 'bg-orange-500' : 'bg-orange-100');
+    avatar.innerHTML = role === 'user'
+      ? '<i class="fa-solid fa-user text-white text-xs"></i>'
+      : '<i class="fa-solid fa-robot text-orange-500 text-xs"></i>';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'px-3 py-2 text-sm shadow-sm max-w-[85%] whitespace-pre-wrap ' +
+      (role === 'user'
+        ? 'bg-orange-500 text-white rounded-2xl rounded-tr-none'
+        : 'bg-white text-gray-700 rounded-2xl rounded-tl-none');
+    bubble.textContent = text;
+
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function appendTyping() {
+    const container = document.getElementById('chat-messages');
+    const div       = document.createElement('div');
+    div.id          = 'typing-indicator';
+    div.className   = 'flex gap-2';
+    div.innerHTML   = `
+      <div class="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid fa-robot text-orange-500 text-xs"></i>
+      </div>
+      <div class="bg-white rounded-2xl rounded-tl-none px-4 py-3 shadow-sm flex gap-1 items-center">
+        <span class="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+        <span class="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+        <span class="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+      </div>`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function removeTyping() {
+    document.getElementById('typing-indicator')?.remove();
+  }
+</script>

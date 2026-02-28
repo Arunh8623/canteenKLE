@@ -1,0 +1,24 @@
+<%- include('partials/header', { title: title || 'Error' }) %>
+<%- include('partials/navbar') %>
+
+<main class="flex-1 flex items-center justify-center p-8">
+  <div class="text-center max-w-md">
+    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+      <i class="fa-solid fa-triangle-exclamation text-red-400 text-3xl"></i>
+    </div>
+    <h1 class="font-display text-4xl font-bold text-gray-900 mb-3"><%= title %></h1>
+    <p class="text-gray-500 mb-8"><%= message %></p>
+    <div class="flex gap-3 justify-center">
+      <a href="javascript:history.back()" class="btn-secondary">
+        <i class="fa-solid fa-arrow-left mr-1.5"></i>Go Back
+      </a>
+      <a href="/" class="btn-primary">
+        <i class="fa-solid fa-house mr-1.5"></i>Home
+      </a>
+    </div>
+  </div>
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

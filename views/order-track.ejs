@@ -1,0 +1,126 @@
+<%- include('partials/header', { title: 'Track Order' }) %>
+<%- include('partials/navbar') %>
+
+<main class="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-10">
+
+  <div class="flex items-center gap-3 mb-8">
+    <a href="javascript:history.back()" class="text-gray-400 hover:text-orange-600 transition-colors">
+      <i class="fa-solid fa-arrow-left text-xl"></i>
+    </a>
+    <h1 class="font-display text-3xl font-bold text-gray-900">Track Order</h1>
+  </div>
+
+  <!-- Order info -->
+  <div class="card p-5 mb-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <p class="text-sm text-gray-500">Order</p>
+        <p class="font-mono font-bold text-lg text-gray-900">#<%= order.uuid.slice(0,8).toUpperCase() %></p>
+        <p class="text-sm text-gray-500 mt-0.5"><%= order.stall_name %> · <%= order.canteen_name %></p>
+      </div>
+      <div class="text-right">
+        <span id="status-badge" class="status-<%= order.status %> text-sm font-bold px-4 py-1.5 rounded-full capitalize">
+          <%= order.status %>
+        </span>
+        <p class="text-xs text-gray-400 mt-1"><%= new Date(order.created_at).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress tracker -->
+  <div class="card p-6 mb-5">
+    <%
+      const steps   = ['pending','preparing','ready','delivered'];
+      const stepLabels = { pending: 'Order Placed', preparing: 'Being Prepared', ready: 'Ready to Collect', delivered: 'Collected' };
+      const stepIcons  = { pending: 'fa-receipt', preparing: 'fa-fire', ready: 'fa-bell', delivered: 'fa-circle-check' };
+      const currentIdx = steps.indexOf(order.status);
+    %>
+    <div class="flex items-start gap-0">
+      <% steps.forEach((step, i) => { %>
+        <div class="flex-1 relative">
+          <div class="flex flex-col items-center">
+            <!-- Circle -->
+            <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all
+              <%= i < currentIdx ? 'bg-green-500 border-green-500' : i === currentIdx ? 'bg-orange-500 border-orange-500 animate-pulse-soft' : 'bg-white border-gray-200' %>">
+              <i class="fa-solid <%= stepIcons[step] %> text-sm
+                <%= i <= currentIdx ? 'text-white' : 'text-gray-300' %>"></i>
+            </div>
+            <!-- Label -->
+            <p class="text-xs font-medium mt-2 text-center leading-tight
+              <%= i === currentIdx ? 'text-orange-600 font-semibold' : i < currentIdx ? 'text-green-600' : 'text-gray-400' %>">
+              <%= stepLabels[step] %>
+            </p>
+          </div>
+          <!-- Connector line -->
+          <% if (i < steps.length - 1) { %>
+            <div class="absolute top-5 left-1/2 w-full h-0.5
+              <%= i < currentIdx ? 'bg-green-400' : 'bg-gray-200' %>"></div>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Queue position (if active) -->
+  <% if (queuePos && ['pending','preparing'].includes(order.status)) { %>
+    <div class="card p-5 mb-5 bg-orange-50 border border-orange-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 font-medium">Queue Position</p>
+          <p class="text-4xl font-display font-bold text-orange-600 mt-1">#<%= queuePos %></p>
+        </div>
+        <div class="text-right text-sm text-gray-500">
+          <p>Estimated ready in</p>
+          <p class="font-bold text-gray-900 text-2xl">~<%= queuePos * 5 %> min</p>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <!-- Items summary -->
+  <div class="card p-5 mb-5">
+    <h3 class="font-semibold text-gray-900 mb-3">Items Ordered</h3>
+    <div class="divide-y divide-gray-50">
+      <% items.forEach(item => { %>
+        <div class="flex justify-between items-center py-2.5 text-sm">
+          <span class="text-gray-800"><%= item.item_name %> <span class="text-gray-400">× <%= item.quantity %></span></span>
+          <span class="font-semibold text-gray-900">₹<%= (item.quantity * item.price_at_order).toFixed(0) %></span>
+        </div>
+      <% }) %>
+    </div>
+    <div class="flex justify-between font-bold text-gray-900 pt-3 border-t border-gray-100">
+      <span>Total</span>
+      <span class="text-orange-600">₹<%= parseFloat(order.total_amount).toFixed(0) %></span>
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <a href="/order/my-orders" class="btn-secondary flex-1 text-center">
+      <i class="fa-solid fa-list mr-2"></i>All Orders
+    </a>
+    <a href="/" class="btn-ghost flex-1 text-center border border-gray-200">
+      <i class="fa-solid fa-house mr-2"></i>Home
+    </a>
+  </div>
+</main>
+
+<script>
+  const socket = io();
+  socket.emit('join_user_room', '<%= user.id %>');
+  socket.on('order_update', (data) => {
+    if (data.uuid === '<%= order.uuid %>') {
+      const badge = document.getElementById('status-badge');
+      if (badge) {
+        badge.className = `status-${data.status} text-sm font-bold px-4 py-1.5 rounded-full capitalize`;
+        badge.textContent = data.status;
+      }
+      if (data.status === 'ready') {
+        document.querySelector('h1').textContent = '🔔 Ready to Collect!';
+      }
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>
+</body>
+</html>

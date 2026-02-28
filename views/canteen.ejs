@@ -1,0 +1,96 @@
+<%- include('partials/header', { title: canteen.name }) %>
+<%- include('partials/navbar') %>
+
+<main class="flex-1">
+
+  <!-- Canteen Hero -->
+  <section class="relative h-56 sm:h-72 overflow-hidden">
+    <img src="<%= canteen.image_url || '/images/canteen-default.jpg' %>"
+      alt="<%= canteen.name %>"
+      class="w-full h-full object-cover"
+      onerror="this.src='/images/canteen-default.jpg'" />
+    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+    <div class="absolute inset-0 flex items-end">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-8">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-white/70 text-sm mb-3">
+          <a href="/" class="hover:text-white transition-colors">Home</a>
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+          <span class="text-white font-medium"><%= canteen.name %></span>
+        </div>
+        <h1 class="font-display text-3xl sm:text-4xl font-bold text-white mb-1"><%= canteen.name %></h1>
+        <div class="flex items-center gap-3 text-sm">
+          <span class="text-white/80"><i class="fa-solid fa-location-dot mr-1.5 text-orange-300"></i><%= canteen.location %></span>
+          <span class="w-1 h-1 bg-white/50 rounded-full"></span>
+          <span class="bg-green-400/90 text-white px-2.5 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
+            <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> Open Now
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stalls Grid -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h2 class="font-display text-2xl font-bold text-gray-900">
+          <%= canteen.name === 'HUB' ? 'Food Stalls' : 'Available Counter' %>
+        </h2>
+        <p class="text-gray-500 text-sm mt-1">
+          <%= canteen.stalls.length %> stall<%= canteen.stalls.length !== 1 ? 's' : '' %> available
+        </p>
+      </div>
+      <a href="/" class="btn-ghost text-sm">
+        <i class="fa-solid fa-arrow-left mr-1.5"></i>Back
+      </a>
+    </div>
+
+    <% if (canteen.stalls.length === 0) { %>
+      <div class="text-center py-20">
+        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fa-solid fa-store-slash text-gray-400 text-2xl"></i>
+        </div>
+        <p class="text-gray-500">No stalls available right now.</p>
+      </div>
+    <% } else { %>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-4xl">
+        <% canteen.stalls.forEach(stall => { %>
+          <a href="/stall/<%= stall.id %>" class="card-hover group">
+            <!-- Image -->
+            <div class="relative overflow-hidden h-44">
+              <img src="<%= stall.image_url || '/images/stall-default.jpg' %>"
+                alt="<%= stall.name %>"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onerror="this.src='/images/stall-default.jpg'" />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+              <!-- Prep time badge -->
+              <div class="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-2.5 py-1 rounded-full">
+                <i class="fa-solid fa-clock mr-1 text-orange-300"></i>~<%= stall.avg_prep_time %> min
+              </div>
+            </div>
+            <!-- Info -->
+            <div class="p-5">
+              <h3 class="font-display font-bold text-gray-900 text-xl mb-1.5"><%= stall.name %></h3>
+              <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2"><%= stall.description %></p>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                  <i class="fa-solid fa-fire text-orange-400"></i>
+                  <span>Fresh & made to order</span>
+                </div>
+                <span class="flex items-center gap-1.5 text-orange-600 font-semibold text-sm group-hover:gap-2.5 transition-all">
+                  View Menu <i class="fa-solid fa-arrow-right text-xs"></i>
+                </span>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+</main>
+
+<%- include('partials/footer') %>
+</body>
+</html>

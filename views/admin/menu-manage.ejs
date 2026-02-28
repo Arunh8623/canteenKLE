@@ -1,0 +1,393 @@
+<%- include('../partials/header', { title: 'Manage Menu' }) %>
+
+<div class="min-h-screen bg-gray-950 text-white font-body">
+  <!-- Admin Navbar -->
+  <nav class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-store text-white text-sm"></i>
+        </div>
+        <p class="font-bold text-white"><%= stall.name %> — Menu</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/admin/dashboard" class="text-gray-400 hover:text-white text-sm px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+          <i class="fa-solid fa-gauge mr-1.5"></i>Dashboard
+        </a>
+        <form action="/admin/logout" method="POST">
+          <button class="text-gray-400 hover:text-red-400 text-sm px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+            <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Logout
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Top action bar -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+      <h1 class="font-display text-2xl font-bold text-white">Menu Items</h1>
+      <div class="flex gap-2 flex-wrap">
+        <!-- AI OCR upload -->
+        <button onclick="document.getElementById('ocr-modal').classList.remove('hidden')"
+          class="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>Upload Menu Image (AI)
+        </button>
+        <!-- Add item manually -->
+        <button onclick="document.getElementById('add-modal').classList.remove('hidden')"
+          class="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
+          <i class="fa-solid fa-plus"></i>Add Item
+        </button>
+      </div>
+    </div>
+
+    <!-- Menu items table -->
+    <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-800">
+            <tr class="text-xs text-gray-400 uppercase tracking-wide">
+              <th class="text-left px-5 py-3.5">Item</th>
+              <th class="text-left px-4 py-3.5">Category</th>
+              <th class="text-right px-4 py-3.5">Price</th>
+              <th class="text-center px-4 py-3.5">Veg</th>
+              <th class="text-center px-4 py-3.5">Available</th>
+              <th class="text-right px-5 py-3.5">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800">
+            <% items.forEach(item => { %>
+              <tr class="hover:bg-gray-800/50 transition-colors" id="item-row-<%= item.id %>">
+                <td class="px-5 py-3.5">
+                  <p class="font-medium text-white"><%= item.name %></p>
+                  <p class="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]"><%= item.description || '—' %></p>
+                </td>
+                <td class="px-4 py-3.5 text-gray-400"><%= item.category %></td>
+                <td class="px-4 py-3.5 text-right font-semibold text-orange-400">₹<%= parseFloat(item.price).toFixed(0) %></td>
+                <td class="px-4 py-3.5 text-center">
+                  <span class="<%= item.is_veg ? 'text-green-400' : 'text-red-400' %> text-lg">
+                    <i class="fa-solid fa-circle text-[8px] <%= item.is_veg ? 'text-green-400' : 'text-red-400' %>"></i>
+                  </span>
+                </td>
+                <td class="px-4 py-3.5 text-center">
+                  <button onclick="toggleItem(<%= item.id %>)" id="toggle-<%= item.id %>"
+                    class="relative w-11 h-6 rounded-full transition-colors <%= item.is_available ? 'bg-green-500' : 'bg-gray-600' %>">
+                    <span class="absolute top-0.5 <%= item.is_available ? 'left-5' : 'left-0.5' %> w-5 h-5 bg-white rounded-full transition-all"></span>
+                  </button>
+                </td>
+                <td class="px-5 py-3.5 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button onclick="openEditModal(<%= JSON.stringify(item) %>)"
+                      class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                    <button onclick="deleteItem(<%= item.id %>, '<%= item.name %>')"
+                      class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+            <% if (items.length === 0) { %>
+              <tr><td colspan="6" class="text-center py-12 text-gray-600">
+                <i class="fa-solid fa-utensils text-3xl mb-3 block"></i>No menu items yet. Add your first item!
+              </td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD ITEM MODAL ════════════════════════════════════════ -->
+<div id="add-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-lg p-6 overflow-y-auto max-h-[90vh]">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display font-bold text-xl text-white">Add Menu Item</h3>
+      <button onclick="document.getElementById('add-modal').classList.add('hidden')" class="text-gray-500 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <div class="space-y-3">
+      <input type="text" id="add-name" placeholder="Item name *" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+      <textarea id="add-desc" rows="2" placeholder="Description (optional)" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"></textarea>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Price (₹) *</label>
+          <input type="number" id="add-price" min="0" step="0.5" placeholder="0.00" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Prep Time (min)</label>
+          <input type="number" id="add-prep" min="0" value="10" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Category</label>
+          <input type="text" id="add-category" placeholder="e.g. Breakfast" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Type</label>
+          <select id="add-veg" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <option value="true">🟢 Vegetarian</option>
+            <option value="false">🔴 Non-Vegetarian</option>
+          </select>
+        </div>
+      </div>
+      <div id="add-error" class="text-red-400 text-xs hidden"></div>
+      <button onclick="addItem()"
+        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors mt-2">
+        <i class="fa-solid fa-plus mr-2"></i>Add Item
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT ITEM MODAL ═══════════════════════════════════════ -->
+<div id="edit-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-lg p-6 overflow-y-auto max-h-[90vh]">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display font-bold text-xl text-white">Edit Item</h3>
+      <button onclick="document.getElementById('edit-modal').classList.add('hidden')" class="text-gray-500 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+    <input type="hidden" id="edit-id" />
+    <div class="space-y-3">
+      <input type="text" id="edit-name" placeholder="Item name *" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+      <textarea id="edit-desc" rows="2" placeholder="Description" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"></textarea>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Price (₹)</label>
+          <input type="number" id="edit-price" min="0" step="0.5" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Prep Time (min)</label>
+          <input type="number" id="edit-prep" min="0" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Category</label>
+          <input type="text" id="edit-category" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Type</label>
+          <select id="edit-veg" class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <option value="true">🟢 Vegetarian</option>
+            <option value="false">🔴 Non-Vegetarian</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="saveEdit()"
+        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-colors mt-2">
+        <i class="fa-solid fa-floppy-disk mr-2"></i>Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AI OCR MODAL ══════════════════════════════════════════ -->
+<div id="ocr-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 p-4">
+  <div class="bg-gray-900 rounded-2xl border border-gray-700 w-full max-w-2xl p-6 overflow-y-auto max-h-[90vh]">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h3 class="font-display font-bold text-xl text-white">AI Menu Extractor</h3>
+        <p class="text-xs text-gray-400 mt-0.5">Upload a photo of your handwritten or printed menu</p>
+      </div>
+      <button onclick="document.getElementById('ocr-modal').classList.add('hidden')" class="text-gray-500 hover:text-white">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Upload area -->
+    <div id="ocr-upload-area" class="border-2 border-dashed border-gray-700 rounded-2xl p-8 text-center mb-4 hover:border-purple-500 transition-colors cursor-pointer" onclick="document.getElementById('ocr-file').click()">
+      <i class="fa-solid fa-image text-3xl text-gray-500 mb-3 block"></i>
+      <p class="text-gray-400 text-sm">Click to upload or drag & drop</p>
+      <p class="text-gray-600 text-xs mt-1">JPEG, PNG, WebP · Max 5MB</p>
+      <input type="file" id="ocr-file" accept="image/*" class="hidden" onchange="previewOCR(event)" />
+    </div>
+
+    <div id="ocr-preview" class="hidden mb-4">
+      <img id="ocr-preview-img" src="" alt="Preview" class="w-full max-h-48 object-contain rounded-xl bg-gray-800" />
+    </div>
+
+    <button id="ocr-btn" onclick="runOCR()"
+      class="hidden w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition-colors mb-4">
+      <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Extract Menu with AI
+    </button>
+
+    <!-- OCR loading -->
+    <div id="ocr-loading" class="hidden text-center py-6">
+      <i class="fa-solid fa-spinner fa-spin text-purple-400 text-3xl mb-3 block"></i>
+      <p class="text-gray-400 text-sm">AI is reading your menu...</p>
+    </div>
+
+    <!-- Extracted items preview -->
+    <div id="ocr-results" class="hidden">
+      <h4 class="font-semibold text-white mb-3">Extracted Items <span id="ocr-count" class="text-gray-400 text-sm font-normal"></span></h4>
+      <div id="ocr-items-list" class="space-y-2 mb-4 max-h-64 overflow-y-auto"></div>
+      <button onclick="saveOCRItems()"
+        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition-colors">
+        <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Save All Items to Menu
+      </button>
+    </div>
+
+    <div id="ocr-error" class="hidden bg-red-500/20 border border-red-500/40 text-red-300 text-sm rounded-xl px-4 py-3 mt-3"></div>
+  </div>
+</div>
+
+<script>
+  let ocrExtractedItems = [];
+
+  async function addItem() {
+    const name  = document.getElementById('add-name').value.trim();
+    const price = parseFloat(document.getElementById('add-price').value);
+    if (!name || isNaN(price) || price <= 0) {
+      document.getElementById('add-error').textContent = 'Name and valid price are required';
+      document.getElementById('add-error').classList.remove('hidden'); return;
+    }
+    document.getElementById('add-error').classList.add('hidden');
+
+    const res = await fetch('/admin/menu/add', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name, price,
+        description:   document.getElementById('add-desc').value,
+        category:      document.getElementById('add-category').value || 'Other',
+        is_veg:        document.getElementById('add-veg').value,
+        prep_time_mins: document.getElementById('add-prep').value,
+      })
+    });
+    if (res.ok) { window.location.reload(); }
+    else { const d = await res.json(); document.getElementById('add-error').textContent = d.error; document.getElementById('add-error').classList.remove('hidden'); }
+  }
+
+  function openEditModal(item) {
+    document.getElementById('edit-id').value       = item.id;
+    document.getElementById('edit-name').value     = item.name;
+    document.getElementById('edit-desc').value     = item.description || '';
+    document.getElementById('edit-price').value    = item.price;
+    document.getElementById('edit-prep').value     = item.prep_time_mins;
+    document.getElementById('edit-category').value = item.category;
+    document.getElementById('edit-veg').value      = item.is_veg ? 'true' : 'false';
+    document.getElementById('edit-modal').classList.remove('hidden');
+    document.getElementById('edit-modal').classList.add('flex');
+  }
+
+  async function saveEdit() {
+    const id = document.getElementById('edit-id').value;
+    const res = await fetch(`/admin/menu/${id}/update`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name:          document.getElementById('edit-name').value,
+        description:   document.getElementById('edit-desc').value,
+        price:         parseFloat(document.getElementById('edit-price').value),
+        category:      document.getElementById('edit-category').value,
+        is_veg:        document.getElementById('edit-veg').value,
+        prep_time_mins:document.getElementById('edit-prep').value,
+        is_available:  'true',
+      })
+    });
+    if (res.ok) window.location.reload();
+  }
+
+  async function toggleItem(itemId) {
+    await fetch(`/admin/menu/${itemId}/toggle`, { method: 'POST' });
+    window.location.reload();
+  }
+
+  async function deleteItem(id, name) {
+    if (!confirm(`Delete "${name}" from the menu?`)) return;
+    const res = await fetch(`/admin/menu/${id}/delete`, { method: 'POST' });
+    if (res.ok) document.getElementById('item-row-' + id)?.remove();
+  }
+
+  // ── OCR ──────────────────────────────────────────────────────
+  let ocrFile = null;
+
+  function previewOCR(event) {
+    ocrFile = event.target.files[0];
+    if (!ocrFile) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('ocr-preview-img').src = e.target.result;
+      document.getElementById('ocr-preview').classList.remove('hidden');
+      document.getElementById('ocr-btn').classList.remove('hidden');
+      document.getElementById('ocr-results').classList.add('hidden');
+      document.getElementById('ocr-error').classList.add('hidden');
+    };
+    reader.readAsDataURL(ocrFile);
+  }
+
+  async function runOCR() {
+    if (!ocrFile) return;
+    document.getElementById('ocr-btn').classList.add('hidden');
+    document.getElementById('ocr-loading').classList.remove('hidden');
+    document.getElementById('ocr-error').classList.add('hidden');
+
+    const formData = new FormData();
+    formData.append('menuImage', ocrFile);
+
+    try {
+      const res  = await fetch('/admin/menu/upload-image', { method: 'POST', body: formData });
+      const data = await res.json();
+      document.getElementById('ocr-loading').classList.add('hidden');
+
+      if (!res.ok || !data.items) {
+        document.getElementById('ocr-error').textContent = data.error || 'Extraction failed';
+        document.getElementById('ocr-error').classList.remove('hidden');
+        document.getElementById('ocr-btn').classList.remove('hidden'); return;
+      }
+
+      ocrExtractedItems = data.items;
+      document.getElementById('ocr-count').textContent = `(${data.items.length} items found)`;
+
+      const list = document.getElementById('ocr-items-list');
+      list.innerHTML = '';
+      data.items.forEach((item, i) => {
+        list.innerHTML += `
+          <div class="bg-gray-800 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 text-sm">
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-white truncate">${item.name}</p>
+              <p class="text-xs text-gray-400">${item.category} · ${item.is_veg ? '🟢 Veg' : '🔴 Non-Veg'}</p>
+            </div>
+            <span class="font-bold text-orange-400 flex-shrink-0">₹${parseFloat(item.price).toFixed(0)}</span>
+          </div>`;
+      });
+      document.getElementById('ocr-results').classList.remove('hidden');
+    } catch (e) {
+      document.getElementById('ocr-loading').classList.add('hidden');
+      document.getElementById('ocr-error').textContent = 'Error: ' + e.message;
+      document.getElementById('ocr-error').classList.remove('hidden');
+      document.getElementById('ocr-btn').classList.remove('hidden');
+    }
+  }
+
+  async function saveOCRItems() {
+    if (!ocrExtractedItems.length) return;
+    const res = await fetch('/admin/menu/bulk-insert', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items: ocrExtractedItems })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      alert(`✅ ${data.inserted} items added to your menu!`);
+      window.location.reload();
+    } else {
+      alert('Failed to save items');
+    }
+  }
+
+  // Show add modal as flex
+  document.querySelectorAll('#add-modal, #edit-modal, #ocr-modal').forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) m.classList.add('hidden'); });
+  });
+</script>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

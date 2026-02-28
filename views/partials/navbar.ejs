@@ -1,0 +1,195 @@
+<%
+  const safeUser =
+    typeof user !== 'undefined' && user ? user : null;
+
+  const cartCount =
+    typeof locals !== 'undefined' && locals.cartCount
+      ? locals.cartCount
+      : 0;
+%>
+
+<nav class="bg-white border-b border-orange-100 sticky top-0 z-50 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 bg-gradient-to-br from-orange-500 to-amber-400 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+          <i class="fa-solid fa-utensils text-white text-sm"></i>
+        </div>
+        <div class="leading-tight">
+          <span class="font-display font-bold text-gray-900 text-lg">KLE Canteen</span>
+          <p class="text-xs text-orange-500 font-medium -mt-0.5">KLE Technological University</p>
+        </div>
+      </a>
+
+      <!-- Desktop nav -->
+      <div class="hidden md:flex items-center gap-1">
+        <a href="/" class="btn-ghost text-sm">
+          <i class="fa-solid fa-house mr-1.5"></i>Home
+        </a>
+        <a href="/canteen/1" class="btn-ghost text-sm">
+          <i class="fa-solid fa-store mr-1.5"></i>HUB
+        </a>
+        <a href="/canteen/2" class="btn-ghost text-sm">
+          <i class="fa-solid fa-bowl-food mr-1.5"></i>RHK
+        </a>
+
+        <% if (safeUser) { %>
+          <a href="/order/my-orders" class="btn-ghost text-sm">
+            <i class="fa-solid fa-receipt mr-1.5"></i>My Orders
+          </a>
+        <% } %>
+      </div>
+
+      <!-- Right side -->
+      <div class="flex items-center gap-3">
+
+        <% if (safeUser) { %>
+
+          <!-- Cart -->
+          <a href="/cart"
+             class="relative p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all">
+            <i class="fa-solid fa-cart-shopping text-xl"></i>
+
+            <span id="nav-cart-count"
+              class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center <%= cartCount > 0 ? '' : 'hidden' %>">
+              <%= cartCount > 99 ? '99+' : cartCount %>
+            </span>
+          </a>
+
+          <!-- User menu -->
+          <div class="relative">
+            <button id="user-menu-btn"
+              onclick="toggleUserMenu()"
+              class="flex items-center gap-2 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl px-3 py-2 transition-all">
+
+              <div class="w-7 h-7 bg-gradient-to-br from-orange-400 to-amber-300 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                <%= safeUser.name ? safeUser.name.charAt(0).toUpperCase() : '' %>
+              </div>
+
+              <div class="hidden sm:block text-left">
+                <p class="text-sm font-semibold text-gray-800 leading-tight">
+                  <%= safeUser.name ? safeUser.name.split(' ')[0] : '' %>
+                </p>
+                <p class="text-xs text-orange-600 capitalize">
+                  <%= safeUser.role || '' %>
+                </p>
+              </div>
+
+              <i class="fa-solid fa-chevron-down text-xs text-gray-400 ml-1"></i>
+            </button>
+
+            <!-- Dropdown -->
+            <div id="user-dropdown"
+              class="hidden absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+
+              <div class="px-4 py-2 border-b border-gray-100 mb-1">
+                <p class="font-semibold text-gray-900 text-sm truncate">
+                  <%= safeUser.name || '' %>
+                </p>
+                <p class="text-xs text-gray-500 truncate">
+                  <%= safeUser.email || '' %>
+                </p>
+              </div>
+
+              <a href="/order/my-orders"
+                 class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors">
+                <i class="fa-solid fa-receipt w-4"></i> My Orders
+              </a>
+
+              <% if (!safeUser.phone) { %>
+                <button onclick="showPhoneModal()"
+                  class="w-full flex items-center gap-3 px-4 py-2 text-sm text-amber-700 hover:bg-amber-50 transition-colors">
+                  <i class="fa-solid fa-triangle-exclamation w-4"></i> Add Phone Number
+                </button>
+              <% } %>
+
+              <div class="border-t border-gray-100 mt-1 pt-1">
+                <form action="/auth/logout" method="POST">
+                  <button class="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <i class="fa-solid fa-right-from-bracket w-4"></i> Logout
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+
+        <% } else { %>
+
+          <a href="/auth/login" class="btn-primary text-sm">
+            <i class="fa-brands fa-google mr-1.5"></i>Login
+          </a>
+
+        <% } %>
+
+        <!-- Mobile toggle -->
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="mobile-menu"
+      class="hidden md:hidden border-t border-gray-100 py-3 space-y-1 pb-4">
+
+      <a href="/" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 text-sm font-medium">
+        <i class="fa-solid fa-house mr-2"></i>Home
+      </a>
+
+      <a href="/canteen/1" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 text-sm font-medium">
+        <i class="fa-solid fa-store mr-2"></i>HUB Food Court
+      </a>
+
+      <a href="/canteen/2" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 text-sm font-medium">
+        <i class="fa-solid fa-bowl-food mr-2"></i>RHK Canteen
+      </a>
+
+      <% if (safeUser) { %>
+        <a href="/order/my-orders"
+           class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-orange-50 text-sm font-medium">
+          <i class="fa-solid fa-receipt mr-2"></i>My Orders
+        </a>
+      <% } %>
+
+    </div>
+  </div>
+</nav>
+
+<script>
+  function toggleUserMenu() {
+    document.getElementById('user-dropdown')?.classList.toggle('hidden');
+  }
+
+  function toggleMobileMenu() {
+    document.getElementById('mobile-menu')?.classList.toggle('hidden');
+  }
+
+  document.addEventListener('click', function (e) {
+    const dropdown = document.getElementById('user-dropdown');
+    const button = document.getElementById('user-menu-btn');
+
+    if (!dropdown || !button) return;
+
+    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  function updateCartBadge(count) {
+    const badge = document.getElementById('nav-cart-count');
+    if (!badge) return;
+
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+
+  window.updateCartBadge = updateCartBadge;
+</script>

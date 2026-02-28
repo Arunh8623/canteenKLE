@@ -1,0 +1,171 @@
+<%- include('../partials/header', { title: 'Admin Dashboard' }) %>
+
+<div class="min-h-screen bg-gray-950 text-white font-body">
+
+  <!-- Admin Navbar -->
+  <nav class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+          <i class="fa-solid fa-store text-white text-sm"></i>
+        </div>
+        <div>
+          <p class="font-bold text-white leading-tight"><%= stall.name %></p>
+          <p class="text-xs text-gray-400">Admin Dashboard</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/admin/menu" class="text-gray-400 hover:text-white text-sm px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+          <i class="fa-solid fa-utensils mr-1.5"></i>Menu
+        </a>
+        <form action="/admin/logout" method="POST">
+          <button class="text-gray-400 hover:text-red-400 text-sm px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+            <i class="fa-solid fa-right-from-bracket mr-1.5"></i>Logout
+          </button>
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Stats bar -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 text-center">
+        <p class="text-3xl font-display font-bold text-yellow-400"><%= pending.length %></p>
+        <p class="text-xs text-yellow-400/70 mt-1 font-medium">Pending</p>
+      </div>
+      <div class="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 text-center">
+        <p class="text-3xl font-display font-bold text-blue-400"><%= preparing.length %></p>
+        <p class="text-xs text-blue-400/70 mt-1 font-medium">Preparing</p>
+      </div>
+      <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 text-center">
+        <p class="text-3xl font-display font-bold text-green-400"><%= ready.length %></p>
+        <p class="text-xs text-green-400/70 mt-1 font-medium">Ready</p>
+      </div>
+    </div>
+
+    <!-- Order columns -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Pending Column -->
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+          <h2 class="font-semibold text-white">Pending</h2>
+          <span class="ml-auto bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5 rounded-full"><%= pending.length %></span>
+        </div>
+        <div class="space-y-3" id="pending-col">
+          <% pending.forEach(order => { %>
+            <%- include('order-card', { order, nextStatus: 'preparing', nextLabel: 'Start Preparing', nextColor: 'bg-blue-500 hover:bg-blue-600' }) %>
+          <% }) %>
+          <% if (pending.length === 0) { %>
+            <div class="text-center py-8 text-gray-600 text-sm border border-gray-800 rounded-2xl">
+              <i class="fa-solid fa-clock-rotate-left text-2xl mb-2 block"></i>No pending orders
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Preparing Column -->
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-3 h-3 rounded-full bg-blue-400 animate-pulse"></div>
+          <h2 class="font-semibold text-white">Preparing</h2>
+          <span class="ml-auto bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded-full"><%= preparing.length %></span>
+        </div>
+        <div class="space-y-3">
+          <% preparing.forEach(order => { %>
+            <%- include('order-card', { order, nextStatus: 'ready', nextLabel: 'Mark Ready', nextColor: 'bg-green-500 hover:bg-green-600' }) %>
+          <% }) %>
+          <% if (preparing.length === 0) { %>
+            <div class="text-center py-8 text-gray-600 text-sm border border-gray-800 rounded-2xl">
+              <i class="fa-solid fa-fire text-2xl mb-2 block"></i>Nothing cooking
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Ready Column -->
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-3 h-3 rounded-full bg-green-400"></div>
+          <h2 class="font-semibold text-white">Ready to Collect</h2>
+          <span class="ml-auto bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full"><%= ready.length %></span>
+        </div>
+        <div class="space-y-3">
+          <% ready.forEach(order => { %>
+            <%- include('order-card', { order, nextStatus: 'delivered', nextLabel: 'Mark Collected', nextColor: 'bg-gray-500 hover:bg-gray-600' }) %>
+          <% }) %>
+          <% if (ready.length === 0) { %>
+            <div class="text-center py-8 text-gray-600 text-sm border border-gray-800 rounded-2xl">
+              <i class="fa-solid fa-bell text-2xl mb-2 block"></i>Nothing ready yet
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Real-time: receive new orders via Socket.io
+  const socket = io();
+  socket.emit('join_stall_room', '<%= stall.id %>');
+
+  socket.on('new_order', (order) => {
+    // Play a sound and show toast
+    showAdminToast(`🔔 New order #${order.uuid.slice(0,8).toUpperCase()} from ${order.user_name}`);
+    setTimeout(() => window.location.reload(), 2000);
+  });
+
+  async function updateStatus(orderId, status) {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    try {
+      const res = await fetch(`/admin/order/${orderId}/status`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) window.location.reload();
+      else { alert('Failed to update status'); btn.disabled = false; }
+    } catch { alert('Error'); btn.disabled = false; }
+  }
+
+  async function sendSMS(orderId) {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>Sending...`;
+    try {
+      const res  = await fetch(`/admin/order/${orderId}/notify`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        btn.innerHTML = `<i class="fa-solid fa-check mr-1"></i>SMS Sent!`;
+        btn.className = btn.className.replace('bg-orange-500', 'bg-green-500');
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-sms mr-1"></i>Notify`;
+        showAdminToast('SMS failed: ' + (data.error || 'Unknown error'), true);
+      }
+    } catch { btn.disabled = false; }
+  }
+
+  function showAdminToast(msg, isError = false) {
+    let t = document.getElementById('admin-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'admin-toast';
+      t.className = 'fixed top-20 right-4 z-50 text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2';
+      document.body.appendChild(t);
+    }
+    t.className = `fixed top-20 right-4 z-50 text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 ${isError ? 'bg-red-500 text-white' : 'bg-white text-gray-900'}`;
+    t.innerHTML = `<i class="fa-solid ${isError ? 'fa-xmark' : 'fa-bell'} ${isError ? 'text-white' : 'text-orange-500'}"></i>${msg}`;
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 4000);
+  }
+</script>
+
+<%- include('../partials/footer') %>
+</body>
+</html>

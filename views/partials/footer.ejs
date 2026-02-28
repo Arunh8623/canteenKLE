@@ -1,0 +1,44 @@
+<footer class="bg-white border-t border-orange-100 mt-auto">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Brand -->
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-400 rounded-lg flex items-center justify-center">
+            <i class="fa-solid fa-utensils text-white text-xs"></i>
+          </div>
+          <span class="font-display font-bold text-gray-900">KLE Canteen</span>
+        </div>
+        <p class="text-sm text-gray-500 leading-relaxed">
+          Pre-order your meals, skip the queue.<br/>
+          Serving KLE Technological University since 2024.
+        </p>
+      </div>
+      <!-- Canteens -->
+      <div>
+        <h4 class="font-semibold text-gray-800 mb-3 text-sm uppercase tracking-wide">Canteens</h4>
+        <ul class="space-y-2 text-sm text-gray-500">
+          <li><a href="/canteen/1" class="hover:text-orange-600 transition-colors"><i class="fa-solid fa-store mr-2 text-orange-400"></i>HUB Food Court</a></li>
+          <li><a href="/canteen/2" class="hover:text-orange-600 transition-colors"><i class="fa-solid fa-bowl-food mr-2 text-orange-400"></i>RHK Canteen</a></li>
+        </ul>
+      </div>
+      <!-- Links -->
+      <div>
+        <h4 class="font-semibold text-gray-800 mb-3 text-sm uppercase tracking-wide">Quick Links</h4>
+        <ul class="space-y-2 text-sm text-gray-500">
+          <% if (locals.user) { %>
+            <li><a href="/cart" class="hover:text-orange-600 transition-colors"><i class="fa-solid fa-cart-shopping mr-2 text-orange-400"></i>My Cart</a></li>
+            <li><a href="/order/my-orders" class="hover:text-orange-600 transition-colors"><i class="fa-solid fa-receipt mr-2 text-orange-400"></i>My Orders</a></li>
+          <% } else { %>
+            <li><a href="/auth/login" class="hover:text-orange-600 transition-colors"><i class="fa-brands fa-google mr-2 text-orange-400"></i>Login</a></li>
+          <% } %>
+          <li><a href="/admin/login" class="hover:text-orange-600 transition-colors"><i class="fa-solid fa-lock mr-2 text-orange-400"></i>Stall Admin</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-gray-100 mt-6 pt-5 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <p class="text-xs text-gray-400">© 2024 KLE Canteen App · KLE Technological University</p>
+      <p class="text-xs text-gray-400">Built with <i class="fa-solid fa-heart text-red-400 mx-0.5"></i> for students</p>
+    </div>
+  </div>
+</footer>
