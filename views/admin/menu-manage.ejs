@@ -66,23 +66,32 @@
                 <td class="px-4 py-3.5 text-gray-400"><%= item.category %></td>
                 <td class="px-4 py-3.5 text-right font-semibold text-orange-400">₹<%= parseFloat(item.price).toFixed(0) %></td>
                 <td class="px-4 py-3.5 text-center">
-                  <span class="<%= item.is_veg ? 'text-green-400' : 'text-red-400' %> text-lg">
-                    <i class="fa-solid fa-circle text-[8px] <%= item.is_veg ? 'text-green-400' : 'text-red-400' %>"></i>
+                  <%
+                    var vegColor = item.is_veg ? 'text-green-400' : 'text-red-400';
+                  %>
+                  <span class="<%= vegColor %> text-lg">
+                    <i class="fa-solid fa-circle text-[8px] <%= vegColor %>"></i>
                   </span>
                 </td>
                 <td class="px-4 py-3.5 text-center">
-                  <button onclick="toggleItem(<%= item.id %>)" id="toggle-<%= item.id %>"
-                    class="relative w-11 h-6 rounded-full transition-colors <%= item.is_available ? 'bg-green-500' : 'bg-gray-600' %>">
-                    <span class="absolute top-0.5 <%= item.is_available ? 'left-5' : 'left-0.5' %> w-5 h-5 bg-white rounded-full transition-all"></span>
+                  <%
+                    var toggleBg  = item.is_available ? 'bg-green-500' : 'bg-gray-600';
+                    var togglePos = item.is_available ? 'left-5' : 'left-0.5';
+                  %>
+                  <button data-action="toggle" data-id="<%= item.id %>" id="toggle-<%= item.id %>"
+                    data-bg="<%= toggleBg %>" data-pos="<%= togglePos %>"
+                    class="relative w-11 h-6 rounded-full transition-colors ">
+                    <span class="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all"></span>
                   </button>
                 </td>
                 <td class="px-5 py-3.5 text-right">
                   <div class="flex items-center justify-end gap-1">
-                    <button onclick="openEditModal(<%= JSON.stringify(item) %>)"
+                    <button onclick="openEditModal(this)"
+                      data-item="<%= encodeURIComponent(JSON.stringify(item)) %>"
                       class="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
-                    <button onclick="deleteItem(<%= item.id %>, '<%= item.name %>')"
+                    <button data-action="delete" data-id="<%= item.id %>" data-name="<%= item.name %>"
                       class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
                       <i class="fa-solid fa-trash"></i>
                     </button>
@@ -266,7 +275,8 @@
     else { const d = await res.json(); document.getElementById('add-error').textContent = d.error; document.getElementById('add-error').classList.remove('hidden'); }
   }
 
-  function openEditModal(item) {
+  function openEditModal(btn) {
+    var item = JSON.parse(decodeURIComponent(btn.dataset.item));
     document.getElementById('edit-id').value       = item.id;
     document.getElementById('edit-name').value     = item.name;
     document.getElementById('edit-desc').value     = item.description || '';
@@ -296,14 +306,14 @@
   }
 
   async function toggleItem(itemId) {
-    await fetch(`/admin/menu/${itemId}/toggle`, { method: 'POST' });
+    await fetch('/admin/menu/' + itemId + '/toggle', { method: 'POST' });
     window.location.reload();
   }
 
   async function deleteItem(id, name) {
-    if (!confirm(`Delete "${name}" from the menu?`)) return;
-    const res = await fetch(`/admin/menu/${id}/delete`, { method: 'POST' });
-    if (res.ok) document.getElementById('item-row-' + id)?.remove();
+    if (!confirm('Delete "' + name + '" from the menu?')) return;
+    var res = await fetch('/admin/menu/' + id + '/delete', { method: 'POST' });
+    if (res.ok) { var row = document.getElementById('item-row-' + id); if (row) row.remove(); }
   }
 
   // ── OCR ──────────────────────────────────────────────────────
@@ -383,8 +393,31 @@
   }
 
   // Show add modal as flex
-  document.querySelectorAll('#add-modal, #edit-modal, #ocr-modal').forEach(m => {
-    m.addEventListener('click', (e) => { if (e.target === m) m.classList.add('hidden'); });
+  document.querySelectorAll('#add-modal, #edit-modal, #ocr-modal').forEach(function(m) {
+    m.addEventListener('click', function(e) { if (e.target === m) m.classList.add('hidden'); });
+  });
+
+  // Event delegation for data-action buttons (avoids EJS in onclick attributes)
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action = btn.dataset.action;
+    var id     = btn.dataset.id;
+
+    if (action === 'toggle') {
+      toggleItem(id);
+    } else if (action === 'delete') {
+      deleteItem(id, btn.dataset.name || '');
+    } else if (action === 'edit') {
+      openEditModal(btn);
+    }
+  });
+
+  // Apply toggle button styles from data attributes on load
+  document.querySelectorAll('[data-action="toggle"]').forEach(function(btn) {
+    btn.classList.add(btn.dataset.bg || 'bg-gray-600');
+    var span = btn.querySelector('span');
+    if (span) span.classList.add(btn.dataset.pos || 'left-0.5');
   });
 </script>
 

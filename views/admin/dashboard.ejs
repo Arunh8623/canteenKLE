@@ -119,24 +119,22 @@
     setTimeout(() => window.location.reload(), 2000);
   });
 
-  async function updateStatus(orderId, status) {
-    const btn = event.target;
-    btn.disabled = true;
-    btn.textContent = 'Updating...';
+  async function updateStatus(orderId, status, btn) {
+    if (!btn) btn = event && event.target;
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
     try {
-      const res = await fetch(`/admin/order/${orderId}/status`, {
+      const res = await fetch('/admin/order/' + orderId + '/status', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
       if (res.ok) window.location.reload();
-      else { alert('Failed to update status'); btn.disabled = false; }
-    } catch { alert('Error'); btn.disabled = false; }
+      else { alert('Failed to update status'); if (btn) btn.disabled = false; }
+    } catch (e) { alert('Error'); if (btn) btn.disabled = false; }
   }
 
-  async function sendSMS(orderId) {
-    const btn = event.target;
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i>Sending...`;
+  async function sendSMS(orderId, btn) {
+    if (!btn) btn = event && event.target;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Sending...'; }
     try {
       const res  = await fetch(`/admin/order/${orderId}/notify`, { method: 'POST' });
       const data = await res.json();
@@ -164,6 +162,19 @@
     t.classList.remove('hidden');
     setTimeout(() => t.classList.add('hidden'), 4000);
   }
+
+  // Event delegation — handles data-action buttons in order-card.ejs
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action  = btn.dataset.action;
+    var orderId = btn.dataset.orderId;
+    if (action === 'advance') {
+      updateStatus(orderId, btn.dataset.nextStatus, btn);
+    } else if (action === 'sms') {
+      sendSMS(orderId, btn);
+    }
+  });
 </script>
 
 <%- include('../partials/footer') %>
