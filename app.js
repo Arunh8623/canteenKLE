@@ -34,24 +34,8 @@ const server = http.createServer(app);
 socketConfig.init(server);
 
 // ── Security ──────────────────────────────────────────────────
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'", "https://checkout.razorpay.com",
-                    "https://www.gstatic.com", "https://www.googleapis.com",
-                    "https://cdnjs.cloudflare.com", "https://*.firebaseapp.com"],
-      styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com",
-                    "https://cdnjs.cloudflare.com"],
-      fontSrc:     ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      imgSrc:      ["'self'", "data:", "https:", "blob:"],
-      connectSrc:  ["'self'", "https://api.razorpay.com", "https://www.fast2sms.com",
-                    "https://*.firebaseio.com", "https://identitytoolkit.googleapis.com",
-                    "wss:", "ws:"],
-      frameSrc:    ["'self'", "https://checkout.razorpay.com", "https://*.firebaseapp.com"],
-    },
-  },
-}));
+// CSP disabled in development — re-enable in production
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // ── View Engine ───────────────────────────────────────────────
 app.set('view engine', 'ejs');
@@ -88,10 +72,20 @@ app.use(attachUser);
 app.use(attachAdmin);
 
 // ── Global template locals ────────────────────────────────────
+// Firebase CLIENT config available to all EJS views
+app.locals.firebaseConfig = {
+  apiKey:            process.env.FIREBASE_API_KEY             || '',
+  authDomain:        process.env.FIREBASE_AUTH_DOMAIN         || '',
+  storageBucket:     process.env.FIREBASE_STORAGE_BUCKET      || '',
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
+  appId:             process.env.FIREBASE_APP_ID              || '',
+};
+
 app.use((req, res, next) => {
-  res.locals.user       = req.user       || null;
-  res.locals.adminStall = req.adminStall || null;
-  res.locals.appName    = 'KLE Canteen';
+  res.locals.user           = req.user       || null;
+  res.locals.adminStall     = req.adminStall || null;
+  res.locals.appName        = 'KLE Canteen';
+  res.locals.firebaseConfig = app.locals.firebaseConfig;
   next();
 });
 

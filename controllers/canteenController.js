@@ -4,7 +4,7 @@ const Stall    = require('../models/Stall');
 const MenuItem = require('../models/MenuItem');
 
 // GET / — Home page with both canteens
-exports.home = async (req, res) => {
+exports.home = async (req, res, next) => {
   try {
     const canteens = await Canteen.findAll();
     res.render('index', { title: 'KLE Campus Canteen', canteens, user: req.user || null });
