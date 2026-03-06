@@ -10,9 +10,10 @@ const socketConfig   = require('../config/socket');
 const fs             = require('fs');
 
 // GET /admin/login
-exports.loginPage = (req, res) => {
+exports.loginPage = async (req, res) => {
   if (req.adminStall) return res.redirect('/admin/dashboard');
-  res.render('admin/login', { title: 'Admin Login', error: null });
+  const [stalls] = await require('../config/db').query('SELECT id, name FROM stalls WHERE is_active = TRUE ORDER BY id');
+  res.render('admin/login', { title: 'Admin Login', error: req.query.error || null, stalls });
 };
 
 // POST /admin/verify-phone — verify Firebase phone OTP token
@@ -31,6 +32,19 @@ exports.verifyPhone = async (req, res) => {
     return res.json({ success: true, stallName: stall.name });
   } catch (err) {
     return res.status(401).json({ error: 'Verification failed: ' + err.message });
+  }
+};
+
+// POST /admin/dummy-login — DEV ONLY, pick a stall directly
+exports.dummyAdminLogin = async (req, res) => {
+  try {
+    const { stall_id } = req.body;
+    const stall = await Stall.findById(stall_id);
+    if (!stall) return res.redirect('/admin/login?error=Stall+not+found');
+    req.session.adminStallId = stall.id;
+    return res.redirect('/admin/dashboard');
+  } catch (err) {
+    return res.redirect('/admin/login?error=' + encodeURIComponent(err.message));
   }
 };
 

@@ -8,6 +8,30 @@ exports.loginPage = (req, res) => {
   res.render('auth/login', { title: 'Login — KLE Canteen', user: null, error: null });
 };
 
+// POST /auth/dummy-login — DEV ONLY, bypass Firebase
+exports.dummyLogin = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.endsWith('@kletech.ac.in')) {
+      return res.redirect('/auth/login?error=Only @kletech.ac.in emails allowed');
+    }
+    const name = email.split('@')[0];
+    // Upsert user with dummy firebase_uid
+    let user = await User.findByEmail(email);
+    if (!user) {
+      user = await User.create({
+        firebase_uid: 'dummy_' + Date.now(),
+        name, email, phone: null, profile_pic: null,
+      });
+    }
+    req.session.userId = user.id;
+    return res.redirect('/');
+  } catch (err) {
+    console.error('Dummy login error:', err.message);
+    return res.redirect('/auth/login?error=' + encodeURIComponent(err.message));
+  }
+};
+
 // POST /auth/verify — called from client after Firebase Google sign-in
 exports.verifyToken = async (req, res) => {
   try {

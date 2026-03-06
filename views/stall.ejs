@@ -190,7 +190,7 @@
 <%- include('partials/chatbot', { stallId: stall.id, stallName: stall.name }) %>
 
 <script>
-const STALL_ID = '<%= stall.id %>';
+// STALL_ID is declared in chatbot partial above — do not redeclare
 let cartQtys   = {};   // { itemId: quantity }
 let cartTotal  = 0;
 
