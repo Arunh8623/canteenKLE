@@ -58,12 +58,13 @@ if (process.env.NODE_ENV === 'development') {
 
 // ── Session ───────────────────────────────────────────────────
 const sessionStore = new MySQLStore({
-  host:     process.env.DB_HOST,
-  port:     parseInt(process.env.DB_PORT) || 3306,
-  user:     process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  ssl:      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+  host:               process.env.DB_HOST,
+  port:               parseInt(process.env.DB_PORT) || 3306,
+  user:               process.env.DB_USER,
+  password:           process.env.DB_PASSWORD,
+  database:           process.env.DB_NAME,
+  ssl:                process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+  createDatabaseTable: true,
 });
 
 app.use(session({
@@ -72,9 +73,10 @@ app.use(session({
   saveUninitialized: false,
   store:             sessionStore,
   cookie: {
-    secure:   process.env.NODE_ENV === 'production',
+    secure:   false,
     httpOnly: true,
-    maxAge:   7 * 24 * 60 * 60 * 1000,   // 7 days
+    sameSite: 'lax',
+    maxAge:   7 * 24 * 60 * 60 * 1000,
   },
 }));
 
