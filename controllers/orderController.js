@@ -10,6 +10,7 @@ const socketConfig = require('../config/socket');
 // POST /order/create-razorpay-order — Step 1: create Razorpay order
 exports.createRazorpayOrder = async (req, res) => {
   try {
+    if (!req.user) return res.status(401).json({ error: 'Not logged in - session lost' });
     const validation = await Cart.validateSingleStall(req.user.id);
     if (!validation.valid) return res.status(400).json({ error: validation.message });
 
@@ -30,7 +31,8 @@ exports.createRazorpayOrder = async (req, res) => {
       }
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("createRazorpayOrder error:", err);
+    return res.status(500).json({ error: err.message || String(err) });
   }
 };
 
