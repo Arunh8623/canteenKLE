@@ -28,7 +28,8 @@ const adminRoutes  = require('./routes/admin');
 const aiRoutes     = require('./routes/ai');
 
 // ─────────────────────────────────────────────────────────────
-const app    = express();
+const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Init Socket.io
