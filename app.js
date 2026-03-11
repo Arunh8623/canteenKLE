@@ -5,6 +5,7 @@ const express        = require('express');
 const http           = require('http');
 const path           = require('path');
 const session        = require('express-session');
+const MySQLStore     = require('express-mysql-session')(session);
 const cookieParser   = require('cookie-parser');
 const morgan         = require('morgan');
 const helmet         = require('helmet');
@@ -56,10 +57,20 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // ── Session ───────────────────────────────────────────────────
+const sessionStore = new MySQLStore({
+  host:     process.env.DB_HOST,
+  port:     parseInt(process.env.DB_PORT) || 3306,
+  user:     process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  ssl:      process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+});
+
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'fallback_secret',
   resave:            false,
   saveUninitialized: false,
+  store:             sessionStore,
   cookie: {
     secure:   process.env.NODE_ENV === 'production',
     httpOnly: true,
