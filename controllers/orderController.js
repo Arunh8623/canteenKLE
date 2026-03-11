@@ -31,8 +31,8 @@ exports.createRazorpayOrder = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error("createRazorpayOrder error:", err);
-    return res.status(500).json({ error: err.message || String(err) });
+    console.error("createRazorpayOrder error:", JSON.stringify(err));
+    return res.status(500).json({ error: err.message || err.error || JSON.stringify(err) });
   }
 };
 
