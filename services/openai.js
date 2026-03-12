@@ -28,7 +28,7 @@ Guidelines:
 
   const genAI = getClient();
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     systemInstruction: systemPrompt,
   });
 
@@ -60,7 +60,7 @@ const getSuggestions = async (cartItems, allMenuItems) => {
   if (!availableItems) return [];
 
   const genAI = getClient();
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const result = await model.generateContent(
     `A student at a college canteen has these items in their cart: ${cartSummary}.
@@ -90,7 +90,7 @@ const extractMenuFromImage = async (imagePath) => {
   const mimeType    = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
 
   const genAI = getClient();
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const result = await model.generateContent([
     { inlineData: { mimeType, data: base64Image } },
