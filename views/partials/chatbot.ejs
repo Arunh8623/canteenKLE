@@ -94,7 +94,7 @@
       });
       const data = await res.json();
       removeTyping();
-      const reply = data.reply || 'Sorry, I could not process that. Please try again.';
+      const reply = data.reply || data.error || 'Sorry, I could not process that. Please try again.';
       appendMessage('bot', reply);
       chatHistory.push({ role: 'user', content: msg });
       chatHistory.push({ role: 'assistant', content: reply });

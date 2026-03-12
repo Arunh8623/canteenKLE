@@ -24,8 +24,7 @@
     "razorpay": "^2.9.2",
     "socket.io": "^4.6.1",
     "uuid": "^9.0.1",
-    "express-mysql-session": "^3.0.0",
-    "@google/generative-ai": "^0.21.0"
+    "express-mysql-session": "^3.0.0"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.0.0",

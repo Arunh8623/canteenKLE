@@ -28,7 +28,8 @@ exports.chat = async (req, res) => {
 
     return res.json({ reply });
   } catch (err) {
-    return res.status(500).json({ error: 'AI service unavailable: ' + err.message });
+    console.error('AI chat error:', err);
+    return res.status(500).json({ error: 'AI service unavailable: ' + (err.message || JSON.stringify(err)) });
   }
 };
 

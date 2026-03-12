@@ -1,18 +1,35 @@
-// services/openai.js — Gemini AI integrations (drop-in replacement for OpenAI)
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+// services/openai.js — Groq AI integrations (free, no billing needed)
 const fs = require('fs');
 
-const getClient = () => new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL = 'llama-3.1-8b-instant';
+
+const groqChat = async (messages) => {
+  const response = await fetch(GROQ_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({ model: MODEL, messages, max_tokens: 400, temperature: 0.7 }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error?.message || JSON.stringify(data));
+  return data.choices[0].message.content;
+};
 
 // ─────────────────────────────────────────────────────────────
 // 1. CHATBOT — Answer questions about a stall's menu
 // ─────────────────────────────────────────────────────────────
 const chatWithMenu = async (stallName, menuItems, userMessage, conversationHistory = []) => {
   const menuContext = menuItems.map(item =>
-    `- ${item.name} (${item.category}, ₹${item.price}, ${item.is_veg ? 'Veg' : 'Non-Veg'}, ${item.is_available ? 'Available' : 'Unavailable'}): ${item.description || ''}`
+    `- ${item.name} (${item.category}, Rs.${item.price}, ${item.is_veg ? 'Veg' : 'Non-Veg'}, ${item.is_available ? 'Available' : 'Unavailable'}): ${item.description || ''}`
   ).join('\n');
 
-  const systemPrompt = `You are a helpful and friendly food assistant for "${stallName}" canteen stall at KLE Technological University.
+  const messages = [
+    {
+      role: 'system',
+      content: `You are a helpful and friendly food assistant for "${stallName}" canteen stall at KLE Technological University.
 Your job is to help students and staff find the right food items.
 
 Current Menu:
@@ -23,28 +40,13 @@ Guidelines:
 - Suggest items based on budget, preferences, or time constraints
 - Be concise, friendly, and helpful
 - If asked about items not on the menu, politely say they are not available
-- Format prices as Rs.XX
-- You can mention estimated prep times if relevant`;
+- Format prices as Rs.XX`,
+    },
+    ...conversationHistory.slice(-6).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+    { role: 'user', content: userMessage },
+  ];
 
-  const genAI = getClient();
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    systemInstruction: systemPrompt,
-  });
-
-  const history = [];
-  const prevMessages = conversationHistory.slice(-6);
-  for (let i = 0; i < prevMessages.length; i++) {
-    history.push({
-      role: prevMessages[i].role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: prevMessages[i].content }],
-    });
-  }
-
-  const chat = model.startChat({ history });
-  const result = await chat.sendMessage(userMessage);
-  const reply = result.response.text();
-
+  const reply = await groqChat(messages);
   return { reply, tokens: 0 };
 };
 
@@ -59,19 +61,17 @@ const getSuggestions = async (cartItems, allMenuItems) => {
 
   if (!availableItems) return [];
 
-  const genAI = getClient();
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-  const result = await model.generateContent(
-    `A student at a college canteen has these items in their cart: ${cartSummary}.
+  const messages = [{
+    role: 'user',
+    content: `A student at a college canteen has these items in their cart: ${cartSummary}.
 Available items NOT in cart: ${availableItems}.
 Suggest 2-3 complementary items that would pair well with their order.
 Respond ONLY with a JSON array of item names, e.g. ["Filter Coffee", "Masala Vada"]
-No explanation, just the JSON array.`
-  );
+No explanation, just the JSON array.`,
+  }];
 
   try {
-    const text = result.response.text().trim();
+    const text = await groqChat(messages);
     const cleaned = text.replace(/```json|```/g, '').trim();
     const names = JSON.parse(cleaned);
     return allMenuItems.filter(item => names.includes(item.name) && item.is_available);
@@ -81,36 +81,12 @@ No explanation, just the JSON array.`
 };
 
 // ─────────────────────────────────────────────────────────────
-// 3. MENU OCR — Extract menu items from image (Vision)
+// 3. MENU OCR — Extract menu items from image
+// Note: Groq vision support is limited, using text fallback
 // ─────────────────────────────────────────────────────────────
 const extractMenuFromImage = async (imagePath) => {
-  const imageBuffer = fs.readFileSync(imagePath);
-  const base64Image = imageBuffer.toString('base64');
-  const ext         = imagePath.split('.').pop().toLowerCase();
-  const mimeType    = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
-
-  const genAI = getClient();
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-  const result = await model.generateContent([
-    { inlineData: { mimeType, data: base64Image } },
-    `This is a menu from a college canteen in India. Extract all menu items from this image.
-Return ONLY a valid JSON array. Each object must have:
-- "name": item name (string)
-- "price": numeric price in INR (number, no Rs. symbol)
-- "category": food category like "Breakfast", "Meals", "Snacks", "Beverages", etc. (string)
-- "is_veg": true if vegetarian, false if non-vegetarian (boolean)
-- "description": short description if visible, else empty string
-
-Example: [{"name":"Masala Dosa","price":45,"category":"Breakfast","is_veg":true,"description":"Crispy dosa with potato filling"}]
-
-Return ONLY the JSON array, no explanation, no markdown.`,
-  ]);
-
-  const text    = result.response.text().trim();
-  const cleaned = text.replace(/```json|```/g, '').trim();
-  const items   = JSON.parse(cleaned);
-  return items;
+  // Groq doesn't support vision yet — return empty and let admin enter manually
+  throw new Error('Menu OCR requires vision AI. Please enter menu items manually.');
 };
 
 module.exports = { chatWithMenu, getSuggestions, extractMenuFromImage };
