@@ -29,13 +29,13 @@ class User {
     return rows[0] || null;
   }
 
-  static async create({ firebase_uid, name, email, phone, profile_pic }) {
+  static async create({ firebase_uid, name, email, phone, profile_pic, password }) {
     const role = User.detectRole(email);
     const [result] = await db.query(
-      'INSERT INTO users (firebase_uid, name, email, phone, role, profile_pic) VALUES (?,?,?,?,?,?)',
-      [firebase_uid, name, email, phone || null, role, profile_pic || null]
+      'INSERT INTO users (firebase_uid, name, email, phone, role, profile_pic, password) VALUES (?,?,?,?,?,?,?)',
+      [firebase_uid, name, email, phone || null, role, profile_pic || null, password || null]
     );
-    return { id: result.insertId, firebase_uid, name, email, phone, role, profile_pic };
+    return { id: result.insertId, firebase_uid, name, email, phone, role, profile_pic, password };
   }
 
   static async updatePhone(userId, phone) {

@@ -1,101 +1,75 @@
-// controllers/authController.js — OTP Email Auth (no Firebase)
-const User       = require('../models/User');
-const { sendOTP } = require('../services/mailer');
-const crypto     = require('crypto');
-
-// Generate 6-digit OTP
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+// controllers/authController.js — Simple email + password auth
+const User   = require('../models/User');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // GET /auth/login
 exports.loginPage = (req, res) => {
   if (req.user) return res.redirect('/');
-  const error = req.query.error || null;
-  res.render('auth/login', { title: 'Login — KLE Canteen', user: null, error });
+  res.render('auth/login', { title: 'Login — KLE Canteen', user: null, error: req.query.error || null });
 };
 
-// POST /auth/send-otp
-exports.sendOtp = async (req, res) => {
+// GET /auth/register
+exports.registerPage = (req, res) => {
+  if (req.user) return res.redirect('/');
+  res.render('auth/register', { title: 'Register — KLE Canteen', user: null, error: null });
+};
+
+// POST /auth/register
+exports.register = async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email || !email.toLowerCase().endsWith('@kletech.ac.in')) {
+    const { email, password, name, phone } = req.body;
+
+    if (!email || !email.toLowerCase().endsWith('@kletech.ac.in'))
       return res.json({ success: false, error: 'Only @kletech.ac.in email addresses are allowed.' });
-    }
+    if (!name || name.trim().length < 2)
+      return res.json({ success: false, error: 'Please enter your full name.' });
+    if (!password || password.length < 6)
+      return res.json({ success: false, error: 'Password must be at least 6 characters.' });
+    if (!phone || !/^[6-9]\d{9}$/.test(phone))
+      return res.json({ success: false, error: 'Enter a valid 10-digit mobile number.' });
 
-    const otp     = generateOTP();
-    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    // Store OTP in session
-    req.session.otp      = otp;
-    req.session.otpEmail = email.toLowerCase();
-    req.session.otpExp   = expires;
-
-    // Get name if user exists
     const existing = await User.findByEmail(email.toLowerCase());
-    const name = existing?.name || email.split('@')[0];
+    if (existing) return res.json({ success: false, error: 'This email is already registered. Please login.' });
 
-    await sendOTP(email, otp, name);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      firebase_uid: 'local_' + crypto.randomBytes(8).toString('hex'),
+      name: name.trim(),
+      email: email.toLowerCase(),
+      phone,
+      profile_pic: null,
+      password: hashedPassword,
+    });
+
+    req.session.userId = user.id;
     return res.json({ success: true });
   } catch (err) {
-    console.error('Send OTP error:', err.message);
-    return res.json({ success: false, error: 'Failed to send OTP. Please try again.' });
+    console.error('Register error:', err.message);
+    return res.json({ success: false, error: 'Registration failed. Please try again.' });
   }
 };
 
-// POST /auth/verify-otp
-exports.verifyOtp = async (req, res) => {
+// POST /auth/login
+exports.login = async (req, res) => {
   try {
-    const { email, otp, name, phone } = req.body;
+    const { email, password } = req.body;
 
-    // Validate OTP
-    if (!req.session.otp || !req.session.otpEmail || !req.session.otpExp) {
-      return res.json({ success: false, error: 'OTP expired. Please request a new one.' });
-    }
-    if (Date.now() > req.session.otpExp) {
-      return res.json({ success: false, error: 'OTP expired. Please request a new one.' });
-    }
-    if (req.session.otpEmail !== email.toLowerCase()) {
-      return res.json({ success: false, error: 'Email mismatch. Please try again.' });
-    }
-    if (req.session.otp !== otp.trim()) {
-      return res.json({ success: false, error: 'Incorrect OTP. Please try again.' });
-    }
+    if (!email || !email.toLowerCase().endsWith('@kletech.ac.in'))
+      return res.json({ success: false, error: 'Only @kletech.ac.in email addresses are allowed.' });
 
-    // Clear OTP from session
-    delete req.session.otp;
-    delete req.session.otpEmail;
-    delete req.session.otpExp;
+    const user = await User.findByEmail(email.toLowerCase());
+    if (!user) return res.json({ success: false, error: 'No account found. Please register first.' });
+    if (!user.password) return res.json({ success: false, error: 'This account uses a different login method.' });
 
-    // Upsert user
-    let user = await User.findByEmail(email.toLowerCase());
-    if (!user) {
-      // New user — name and phone required
-      if (!name || !name.trim()) {
-        return res.json({ success: false, error: 'Please enter your name.', needsProfile: true });
-      }
-      user = await User.create({
-        firebase_uid: 'email_' + crypto.randomBytes(8).toString('hex'),
-        name: name.trim(),
-        email: email.toLowerCase(),
-        phone: phone || null,
-        profile_pic: null,
-      });
-    } else {
-      // Existing user — update phone if provided
-      if (phone && !user.phone) {
-        await User.updatePhone(user.id, phone);
-        user.phone = phone;
-      }
-    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.json({ success: false, error: 'Incorrect password. Please try again.' });
 
     req.session.userId = user.id;
-    return res.json({
-      success: true,
-      needsPhone: !user.phone,
-      user: { name: user.name, email: user.email, role: user.role },
-    });
+    return res.json({ success: true, user: { name: user.name, role: user.role } });
   } catch (err) {
-    console.error('Verify OTP error:', err.message);
-    return res.json({ success: false, error: 'Verification failed. Please try again.' });
+    console.error('Login error:', err.message);
+    return res.json({ success: false, error: 'Login failed. Please try again.' });
   }
 };
 
@@ -104,9 +78,8 @@ exports.updatePhone = async (req, res) => {
   try {
     const { phone } = req.body;
     if (!req.user) return res.status(401).json({ error: 'Not logged in' });
-    if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
+    if (!phone || !/^[6-9]\d{9}$/.test(phone))
       return res.status(400).json({ error: 'Invalid phone number' });
-    }
     await User.updatePhone(req.user.id, phone);
     return res.json({ success: true });
   } catch (err) {
@@ -118,15 +91,13 @@ exports.updatePhone = async (req, res) => {
 exports.dummyLogin = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email || !email.endsWith('@kletech.ac.in')) {
+    if (!email || !email.endsWith('@kletech.ac.in'))
       return res.redirect('/auth/login?error=Only @kletech.ac.in emails allowed');
-    }
-    const name = email.split('@')[0];
     let user = await User.findByEmail(email);
     if (!user) {
       user = await User.create({
         firebase_uid: 'dummy_' + Date.now(),
-        name, email, phone: null, profile_pic: null,
+        name: email.split('@')[0], email, phone: null, profile_pic: null,
       });
     }
     req.session.userId = user.id;
@@ -141,7 +112,7 @@ exports.logout = (req, res) => {
   req.session.destroy(() => res.redirect('/'));
 };
 
-// Keep for backward compat — not used anymore
-exports.verifyToken = async (req, res) => {
-  return res.status(400).json({ error: 'Firebase auth disabled. Use OTP login.' });
-};
+// Legacy
+exports.verifyToken = async (req, res) => res.status(400).json({ error: 'Use email/password login.' });
+exports.sendOtp     = async (req, res) => res.status(400).json({ error: 'OTP login disabled.' });
+exports.verifyOtp   = async (req, res) => res.status(400).json({ error: 'OTP login disabled.' });
