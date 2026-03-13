@@ -4,7 +4,7 @@ const Order  = require('../models/Order');
 const Stall  = require('../models/Stall');
 const db     = require('../config/db');
 const { createOrder }  = require('../services/razorpay');
-const { sendSMS, templates } = require('../services/fast2sms');
+const { orderConfirmedEmail } = require('../services/mailer');
 const socketConfig = require('../config/socket');
 
 // POST /order/create-razorpay-order — Step 1: create Razorpay order
@@ -82,10 +82,16 @@ exports.confirmOrder = async (req, res) => {
     const orderDetails = await Order.findById(orderId);
     try { socketConfig.notifyAdmin(stallId, { ...orderDetails, queue_position: queuePos }); } catch {}
 
-    // Send confirmation SMS if user has phone
-    if (req.user.phone) {
-      const stall = await Stall.findById(stallId);
-      sendSMS(req.user.phone, templates.orderConfirmed(uuid, stall.name, queuePos)).catch(console.warn);
+    // Send confirmation email
+    if (req.user.email) {
+      const cartItemsForEmail = await db.query(
+        'SELECT ci.quantity, mi.name, (ci.quantity * mi.price) as subtotal FROM cart_items ci JOIN menu_items mi ON ci.menu_item_id = mi.id WHERE ci.user_id = ? AND mi.stall_id = ?',
+        [req.user.id, stallId]
+      ).then(([rows]) => rows).catch(() => []);
+      orderConfirmedEmail(
+        req.user.email, req.user.name, uuid, stall.name, queuePos,
+        cartItemsForEmail, total
+      ).catch(console.warn);
     }
 
     return res.json({ success: true, orderUUID: uuid, queuePosition: queuePos });

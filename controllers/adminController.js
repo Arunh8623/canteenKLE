@@ -4,7 +4,7 @@ const Stall          = require('../models/Stall');
 const Order          = require('../models/Order');
 const MenuItem       = require('../models/MenuItem');
 const db             = require('../config/db');
-const { sendSMS, templates }      = require('../services/fast2sms');
+const { orderReadyEmail } = require('../services/mailer');
 const { extractMenuFromImage }    = require('../services/openai');
 const socketConfig   = require('../config/socket');
 const fs             = require('fs');
@@ -88,11 +88,11 @@ exports.updateStatus = async (req, res) => {
 
     // If ready, send SMS if possible
     if (status === 'ready' && order.user_phone) {
-      sendSMS(order.user_phone, templates.orderReady(order.uuid, req.adminStall.name)).catch(console.warn);
+      if (order.user_email) orderReadyEmail(order.user_email, order.user_name, order.uuid, req.adminStall.name).catch(console.warn);
       // Log notification
       await db.query(
         `INSERT INTO notifications (order_id, type, message, status) VALUES (?,?,?,'sent')`,
-        [order.id, 'sms', templates.orderReady(order.uuid, req.adminStall.name)]
+        [order.id, 'email', `Order ready email sent to ${order.user_email}`]
       );
     }
 
@@ -100,26 +100,25 @@ exports.updateStatus = async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 };
 
-// POST /admin/order/:id/notify — manual SMS trigger
+// POST /admin/order/:id/notify — manual email trigger
 exports.sendNotification = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order || order.stall_id !== req.adminStall.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    if (!order.user_phone) {
-      return res.status(400).json({ error: 'Customer phone number not available' });
+    if (!order.user_email) {
+      return res.status(400).json({ error: 'Customer email not available' });
     }
 
-    const message = templates.orderReady(order.uuid, req.adminStall.name);
-    const result  = await sendSMS(order.user_phone, message);
+    await orderReadyEmail(order.user_email, order.user_name, order.uuid, req.adminStall.name);
 
     await db.query(
-      `INSERT INTO notifications (order_id, type, message, status) VALUES (?,?,'sms',?)`,
-      [order.id, 'sms', result.success ? 'sent' : 'failed']
+      `INSERT INTO notifications (order_id, type, message, status) VALUES (?,?,'email','sent')`,
+      [order.id, 'email', `Order ready email sent to ${order.user_email}`]
     );
 
-    return res.json({ success: result.success, error: result.error });
+    return res.json({ success: true });
   } catch (err) { return res.status(500).json({ error: err.message }); }
 };
 
