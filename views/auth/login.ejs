@@ -101,7 +101,7 @@
 <script>
   firebase.initializeApp({
     apiKey:            "<%= firebaseConfig.apiKey %>",
-    authDomain:        "canteen-kle.onrender.com",
+    authDomain:        "<%= firebaseConfig.authDomain %>",
     storageBucket:     "<%= firebaseConfig.storageBucket %>",
     messagingSenderId: "<%= firebaseConfig.messagingSenderId %>",
     appId:             "<%= firebaseConfig.appId %>",
@@ -151,28 +151,22 @@
     }
   }
 
-  // Handle redirect result on page load
-  auth.getRedirectResult().then(async (result) => {
-    if (result && result.user) {
-      showLoading();
-      console.log('Redirect success:', result.user.email);
-      await verifyWithServer(result.user);
-    }
-  }).catch((err) => {
-    if (err.code !== 'auth/no-current-user') {
-      showError(err.message || 'Login failed');
-    }
-  });
-
   async function signInWithGoogle() {
     showLoading();
     try {
-      // Use redirect — more reliable on production than popup
-      await auth.signInWithRedirect(provider);
+      const result = await auth.signInWithPopup(provider);
+      console.log('Popup success:', result.user.email);
+      await verifyWithServer(result.user);
     } catch(err) {
-      console.log('Redirect error:', err.code, err.message);
+      console.log('Popup error:', err.code, err.message);
       resetBtn();
-      showError(err.message || 'Login failed');
+      if (err.code === 'auth/popup-closed-by-user') {
+        showError('Sign-in cancelled. Please try again.');
+      } else if (err.code === 'auth/popup-blocked') {
+        showError('Popup blocked. Please allow popups and try again.');
+      } else {
+        showError(err.message || 'Login failed');
+      }
     }
   }
 </script>
