@@ -1,10 +1,12 @@
 // controllers/adminController.js
+const bcrypt         = require('bcryptjs');
 const admin          = require('../config/firebase');
 const Stall          = require('../models/Stall');
 const Order          = require('../models/Order');
 const MenuItem       = require('../models/MenuItem');
 const db             = require('../config/db');
 const { orderReadyEmail } = require('../services/mailer');
+const db2                 = require('../config/db');
 const { extractMenuFromImage }    = require('../services/openai');
 const socketConfig   = require('../config/socket');
 const fs             = require('fs');
@@ -12,26 +14,44 @@ const fs             = require('fs');
 // GET /admin/login
 exports.loginPage = async (req, res) => {
   if (req.adminStall) return res.redirect('/admin/dashboard');
-  const [stalls] = await require('../config/db').query('SELECT id, name FROM stalls WHERE is_active = TRUE ORDER BY id');
-  res.render('admin/login', { title: 'Admin Login', error: req.query.error || null, stalls });
+  res.render('admin/login', { title: 'Admin Login', error: req.query.error || null });
 };
 
-// POST /admin/verify-phone — verify Firebase phone OTP token
+// POST /admin/login — stall name + password + phone login
 exports.verifyPhone = async (req, res) => {
   try {
-    const { idToken } = req.body;
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const phone   = decoded.phone_number?.replace('+91', '');
+    const { stall_name, password, phone } = req.body;
 
-    if (!phone) return res.status(400).json({ error: 'No phone number in token' });
+    if (!stall_name || !password || !phone)
+      return res.json({ success: false, error: 'All fields are required.' });
 
-    const stall = await Stall.findByAdminPhone(phone);
-    if (!stall) return res.status(403).json({ error: 'This phone is not registered as a stall admin.' });
+    // Find stall by name (case-insensitive)
+    const [rows] = await db.query(
+      'SELECT * FROM stalls WHERE LOWER(name) = LOWER(?) AND is_active = TRUE', [stall_name.trim()]
+    );
+    const stall = rows[0];
+    if (!stall) return res.json({ success: false, error: 'Stall not found.' });
+
+    // Check phone matches
+    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (stall.admin_phone !== cleanPhone)
+      return res.json({ success: false, error: 'Phone number does not match.' });
+
+    // Check password
+    if (!stall.password)
+      return res.json({ success: false, error: 'No password set. Contact super admin.' });
+
+    const match = await bcrypt.compare(password, stall.password);
+    if (!match) return res.json({ success: false, error: 'Incorrect password.' });
 
     req.session.adminStallId = stall.id;
-    return res.json({ success: true, stallName: stall.name });
+    req.session.save((err) => {
+      if (err) return res.json({ success: false, error: 'Session error.' });
+      return res.json({ success: true, stallName: stall.name });
+    });
   } catch (err) {
-    return res.status(401).json({ error: 'Verification failed: ' + err.message });
+    console.error('Admin login error:', err.message);
+    return res.json({ success: false, error: 'Login failed. Please try again.' });
   }
 };
 
@@ -86,15 +106,7 @@ exports.updateStatus = async (req, res) => {
     // Notify user via socket
     try { socketConfig.notifyUser(order.user_id, { orderId: order.id, uuid: order.uuid, status }); } catch {}
 
-    // If ready, send SMS if possible
-    if (status === 'ready' && order.user_phone) {
-      if (order.user_email) orderReadyEmail(order.user_email, order.user_name, order.uuid, req.adminStall.name).catch(console.warn);
-      // Log notification
-      await db.query(
-        `INSERT INTO notifications (order_id, type, message, status) VALUES (?,?,?,'sent')`,
-        [order.id, 'email', `Order ready email sent to ${order.user_email}`]
-      );
-    }
+
 
     return res.json({ success: true });
   } catch (err) { return res.status(500).json({ error: err.message }); }

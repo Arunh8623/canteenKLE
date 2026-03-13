@@ -10,81 +10,45 @@
           <i class="fa-solid fa-store text-white text-2xl"></i>
         </div>
         <h1 class="font-display text-3xl font-bold text-white">Stall Admin</h1>
-        <p class="text-gray-400 text-sm mt-1">Sign in with your registered phone number</p>
+        <p class="text-gray-400 text-sm mt-1">Sign in to manage your stall</p>
       </div>
 
       <!-- Error -->
       <div id="auth-error" class="hidden bg-red-500/20 border border-red-500/40 text-red-300 text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
-        <i class="fa-solid fa-circle-exclamation"></i>
+        <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
         <span id="auth-error-msg"></span>
       </div>
-      <div id="auth-success" class="hidden bg-green-500/20 border border-green-500/40 text-green-300 text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
-        <i class="fa-solid fa-circle-check"></i>
-        <span id="auth-success-msg"></span>
-      </div>
 
-      <!-- Step 1: Phone number -->
-      <div id="step-phone">
-        <label class="block text-sm font-medium text-gray-300 mb-2">Mobile Number</label>
-        <div class="flex gap-2 mb-4">
-          <span class="flex items-center px-3 bg-white/10 border border-white/20 rounded-xl text-sm text-gray-300">+91</span>
-          <input id="phone-input" type="tel" maxlength="10" placeholder="9876543210"
-            class="flex-1 bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-            oninput="this.value=this.value.replace(/\D/g,'')" />
+      <!-- Form -->
+      <div class="space-y-4">
+        <div class="relative">
+          <i class="fa-solid fa-store absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input type="text" id="stall-name" placeholder="Stall name (e.g. RHK Meals & Snacks)"
+            class="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
         </div>
 
-        <!-- reCAPTCHA container (required by Firebase phone auth) -->
-        <div id="recaptcha-container" class="mb-4 flex justify-center"></div>
+        <div class="relative">
+          <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input type="tel" id="admin-phone" placeholder="Registered mobile number"
+            maxlength="10"
+            class="w-full pl-11 pr-4 py-3.5 bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+        </div>
 
-        <button onclick="sendOTP()" id="send-otp-btn"
-          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-all">
-          <i class="fa-solid fa-paper-plane mr-2"></i>Send OTP
-        </button>
-      </div>
-
-      <!-- Step 2: OTP entry (hidden initially) -->
-      <div id="step-otp" class="hidden">
-        <div class="flex items-center gap-2 mb-4">
-          <button onclick="goBack()" class="text-gray-400 hover:text-white">
-            <i class="fa-solid fa-arrow-left"></i>
+        <div class="relative">
+          <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input type="password" id="admin-password" placeholder="Password"
+            class="w-full pl-11 pr-11 py-3.5 bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+          <button type="button" onclick="togglePwd()" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white">
+            <i id="eye-icon" class="fa-solid fa-eye text-sm"></i>
           </button>
-          <label class="block text-sm font-medium text-gray-300">Enter 6-digit OTP</label>
         </div>
-        <p class="text-xs text-gray-400 mb-4">Sent to +91 <span id="phone-display"></span></p>
-        <input id="otp-input" type="tel" maxlength="6" placeholder="• • • • • •"
-          class="w-full bg-white/10 border border-white/20 text-white placeholder-gray-500 rounded-xl px-4 py-3 text-sm text-center text-xl tracking-widest focus:outline-none focus:ring-2 focus:ring-orange-500 mb-4"
-          oninput="this.value=this.value.replace(/\D/g,'')" />
-        <button onclick="verifyOTP()" id="verify-btn"
-          class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-all">
-          <i class="fa-solid fa-unlock mr-2"></i>Verify & Login
-        </button>
-        <button onclick="resendOTP()" class="w-full mt-2 text-gray-400 hover:text-white text-sm py-2 transition-colors">
-          Resend OTP
-        </button>
       </div>
 
-    </div>
+      <button id="login-btn" onclick="doLogin()"
+        class="w-full mt-6 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white py-3.5 rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2">
+        <i class="fa-solid fa-right-to-bracket"></i> Sign In
+      </button>
 
-    </div>
-
-    <!-- DEV ONLY: Dummy admin login -->
-    <div class="mt-5 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
-      <p class="text-center text-xs text-orange-400 font-semibold mb-3">⚙️ Dev Mode — Quick Login</p>
-      <% if (locals.error) { %>
-        <p class="text-red-400 text-xs text-center mb-2"><%= error %></p>
-      <% } %>
-      <form action="/admin/dummy-login" method="POST" class="flex gap-2">
-        <select name="stall_id"
-          class="flex-1 bg-white/10 border border-white/20 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
-          <% stalls.forEach(s => { %>
-            <option value="<%= s.id %>" class="text-gray-900"><%= s.name %></option>
-          <% }) %>
-        </select>
-        <button type="submit"
-          class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap">
-          Login as Stall
-        </button>
-      </form>
     </div>
 
     <div class="text-center mt-5">
@@ -95,101 +59,61 @@
   </div>
 </div>
 
-<!-- Firebase Client SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
-
 <script>
-  firebase.initializeApp({
-    apiKey:            "<%= firebaseConfig.apiKey %>",
-    authDomain:        "<%= firebaseConfig.authDomain %>",
-    storageBucket:     "<%= firebaseConfig.storageBucket %>",
-    messagingSenderId: "<%= firebaseConfig.messagingSenderId %>",
-    appId:             "<%= firebaseConfig.appId %>",
-  });
-
-  let confirmationResult = null;
-  let recaptchaVerifier  = null;
-
-  function showError(msg)   { document.getElementById('auth-error-msg').textContent = msg;   document.getElementById('auth-error').classList.remove('hidden');   document.getElementById('auth-success').classList.add('hidden'); }
-  function showSuccess(msg) { document.getElementById('auth-success-msg').textContent = msg; document.getElementById('auth-success').classList.remove('hidden'); document.getElementById('auth-error').classList.add('hidden'); }
-
-  async function sendOTP() {
-    const phone = document.getElementById('phone-input').value.trim();
-    if (!/^[6-9]\d{9}$/.test(phone)) { showError('Enter a valid 10-digit mobile number'); return; }
-
-    const btn = document.getElementById('send-otp-btn');
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>Sending...`;
-
-    try {
-      if (!recaptchaVerifier) {
-        recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-          size: 'normal',
-          callback: () => {}
-        });
-        await recaptchaVerifier.render();
-      }
-
-      confirmationResult = await firebase.auth().signInWithPhoneNumber('+91' + phone, recaptchaVerifier);
-
-      document.getElementById('phone-display').textContent = phone;
-      document.getElementById('step-phone').classList.add('hidden');
-      document.getElementById('step-otp').classList.remove('hidden');
-      showSuccess('OTP sent! Check your messages.');
-    } catch (err) {
-      showError(err.message || 'Failed to send OTP');
-      btn.disabled = false;
-      btn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i>Send OTP`;
-    }
+  function showError(msg) {
+    document.getElementById('auth-error-msg').textContent = msg;
+    document.getElementById('auth-error').classList.remove('hidden');
+    document.getElementById('auth-error').classList.add('flex');
   }
 
-  async function verifyOTP() {
-    const otp = document.getElementById('otp-input').value.trim();
-    if (otp.length !== 6) { showError('Enter the 6-digit OTP'); return; }
+  function togglePwd() {
+    const input = document.getElementById('admin-password');
+    const icon  = document.getElementById('eye-icon');
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    icon.className = `fa-solid fa-eye${isText ? '' : '-slash'} text-sm`;
+  }
 
-    const btn = document.getElementById('verify-btn');
+  async function doLogin() {
+    const stall_name = document.getElementById('stall-name').value.trim();
+    const phone      = document.getElementById('admin-phone').value.trim();
+    const password   = document.getElementById('admin-password').value;
+
+    if (!stall_name) { showError('Please enter your stall name.'); return; }
+    if (!phone || !/^[6-9]\d{9}$/.test(phone)) { showError('Enter a valid 10-digit mobile number.'); return; }
+    if (!password) { showError('Please enter your password.'); return; }
+
+    const btn = document.getElementById('login-btn');
     btn.disabled = true;
-    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>Verifying...`;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
 
     try {
-      const result  = await confirmationResult.confirm(otp);
-      const idToken = await result.user.getIdToken();
-
       const res  = await fetch('/admin/verify-phone', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body:   JSON.stringify({ idToken }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stall_name, phone, password }),
       });
       const data = await res.json();
 
-      if (!res.ok) {
-        showError(data.error || 'Login failed');
+      if (!data.success) {
+        showError(data.error || 'Login failed.');
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-unlock mr-2"></i>Verify & Login`;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
         return;
       }
 
-      showSuccess(`Welcome back! Redirecting to ${data.stallName} dashboard...`);
-      setTimeout(() => window.location.href = '/admin/dashboard', 1200);
-    } catch (err) {
-      showError(err.code === 'auth/invalid-verification-code' ? 'Invalid OTP. Please try again.' : err.message);
+      btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Welcome, ${data.stallName}!`;
+      setTimeout(() => window.location.href = '/admin/dashboard', 800);
+    } catch {
+      showError('Network error. Please try again.');
       btn.disabled = false;
-      btn.innerHTML = `<i class="fa-solid fa-unlock mr-2"></i>Verify & Login`;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
     }
   }
 
-  function goBack() {
-    document.getElementById('step-otp').classList.add('hidden');
-    document.getElementById('step-phone').classList.remove('hidden');
-    document.getElementById('auth-error').classList.add('hidden');
-    document.getElementById('auth-success').classList.add('hidden');
-    document.getElementById('otp-input').value = '';
-  }
-
-  function resendOTP() {
-    goBack();
-    sendOTP();
-  }
+  document.getElementById('admin-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
 </script>
 </body>
 </html>

@@ -41,8 +41,6 @@ router.get('/login', adminCtrl.loginPage);
 // Verify Firebase phone OTP token, create admin session
 router.post('/verify-phone', adminCtrl.verifyPhone);
 
-// DEV ONLY: dummy admin login — pick stall directly
-router.post('/dummy-login', adminCtrl.dummyAdminLogin);
 
 // ── Protected admin routes ────────────────────────────────────
 
