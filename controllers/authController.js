@@ -1,75 +1,101 @@
-// controllers/authController.js
-const { verifyFirebaseToken } = require('../middleware/firebaseAuth');
-const User = require('../models/User');
+// controllers/authController.js — OTP Email Auth (no Firebase)
+const User       = require('../models/User');
+const { sendOTP } = require('../services/mailer');
+const crypto     = require('crypto');
+
+// Generate 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // GET /auth/login
 exports.loginPage = (req, res) => {
   if (req.user) return res.redirect('/');
-  res.render('auth/login', { title: 'Login — KLE Canteen', user: null, error: null });
+  const error = req.query.error || null;
+  res.render('auth/login', { title: 'Login — KLE Canteen', user: null, error });
 };
 
-// POST /auth/dummy-login — DEV ONLY, bypass Firebase
-exports.dummyLogin = async (req, res) => {
+// POST /auth/send-otp
+exports.sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email || !email.endsWith('@kletech.ac.in')) {
-      return res.redirect('/auth/login?error=Only @kletech.ac.in emails allowed');
+    if (!email || !email.toLowerCase().endsWith('@kletech.ac.in')) {
+      return res.json({ success: false, error: 'Only @kletech.ac.in email addresses are allowed.' });
     }
-    const name = email.split('@')[0];
-    // Upsert user with dummy firebase_uid
-    let user = await User.findByEmail(email);
-    if (!user) {
-      user = await User.create({
-        firebase_uid: 'dummy_' + Date.now(),
-        name, email, phone: null, profile_pic: null,
-      });
-    }
-    req.session.userId = user.id;
-    return res.redirect('/');
+
+    const otp     = generateOTP();
+    const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Store OTP in session
+    req.session.otp      = otp;
+    req.session.otpEmail = email.toLowerCase();
+    req.session.otpExp   = expires;
+
+    // Get name if user exists
+    const existing = await User.findByEmail(email.toLowerCase());
+    const name = existing?.name || email.split('@')[0];
+
+    await sendOTP(email, otp, name);
+    return res.json({ success: true });
   } catch (err) {
-    console.error('Dummy login error:', err.message);
-    return res.redirect('/auth/login?error=' + encodeURIComponent(err.message));
+    console.error('Send OTP error:', err.message);
+    return res.json({ success: false, error: 'Failed to send OTP. Please try again.' });
   }
 };
 
-// POST /auth/verify — called from client after Firebase Google sign-in
-exports.verifyToken = async (req, res) => {
+// POST /auth/verify-otp
+exports.verifyOtp = async (req, res) => {
   try {
-    const { idToken, phone } = req.body;
-    if (!idToken) return res.status(400).json({ error: 'No token provided' });
+    const { email, otp, name, phone } = req.body;
 
-    const decoded = await verifyFirebaseToken(idToken);
-
-    // Only allow KLE email
-    if (!decoded.email?.endsWith('@kletech.ac.in')) {
-      return res.status(403).json({ error: 'Only @kletech.ac.in email addresses are allowed.' });
+    // Validate OTP
+    if (!req.session.otp || !req.session.otpEmail || !req.session.otpExp) {
+      return res.json({ success: false, error: 'OTP expired. Please request a new one.' });
+    }
+    if (Date.now() > req.session.otpExp) {
+      return res.json({ success: false, error: 'OTP expired. Please request a new one.' });
+    }
+    if (req.session.otpEmail !== email.toLowerCase()) {
+      return res.json({ success: false, error: 'Email mismatch. Please try again.' });
+    }
+    if (req.session.otp !== otp.trim()) {
+      return res.json({ success: false, error: 'Incorrect OTP. Please try again.' });
     }
 
-    // Upsert user in DB
-    let user = await User.upsert({
-      firebase_uid: decoded.uid,
-      name:         decoded.name || decoded.email.split('@')[0],
-      email:        decoded.email,
-      profile_pic:  decoded.picture || null,
-    });
+    // Clear OTP from session
+    delete req.session.otp;
+    delete req.session.otpEmail;
+    delete req.session.otpExp;
 
-    // If phone provided, update it
-    if (phone) {
-      await User.updatePhone(user.id, phone);
-      user.phone = phone;
+    // Upsert user
+    let user = await User.findByEmail(email.toLowerCase());
+    if (!user) {
+      // New user — name and phone required
+      if (!name || !name.trim()) {
+        return res.json({ success: false, error: 'Please enter your name.', needsProfile: true });
+      }
+      user = await User.create({
+        firebase_uid: 'email_' + crypto.randomBytes(8).toString('hex'),
+        name: name.trim(),
+        email: email.toLowerCase(),
+        phone: phone || null,
+        profile_pic: null,
+      });
+    } else {
+      // Existing user — update phone if provided
+      if (phone && !user.phone) {
+        await User.updatePhone(user.id, phone);
+        user.phone = phone;
+      }
     }
 
-    // Set session
     req.session.userId = user.id;
-
     return res.json({
       success: true,
-      user:    { id: user.id, name: user.name, email: user.email, role: user.role },
       needsPhone: !user.phone,
+      user: { name: user.name, email: user.email, role: user.role },
     });
   } catch (err) {
-    console.error('Auth error:', err.message);
-    return res.status(401).json({ error: 'Authentication failed: ' + err.message });
+    console.error('Verify OTP error:', err.message);
+    return res.json({ success: false, error: 'Verification failed. Please try again.' });
   }
 };
 
@@ -88,9 +114,34 @@ exports.updatePhone = async (req, res) => {
   }
 };
 
+// POST /auth/dummy-login — DEV ONLY
+exports.dummyLogin = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.endsWith('@kletech.ac.in')) {
+      return res.redirect('/auth/login?error=Only @kletech.ac.in emails allowed');
+    }
+    const name = email.split('@')[0];
+    let user = await User.findByEmail(email);
+    if (!user) {
+      user = await User.create({
+        firebase_uid: 'dummy_' + Date.now(),
+        name, email, phone: null, profile_pic: null,
+      });
+    }
+    req.session.userId = user.id;
+    return res.redirect('/');
+  } catch (err) {
+    return res.redirect('/auth/login?error=' + encodeURIComponent(err.message));
+  }
+};
+
 // POST /auth/logout
 exports.logout = (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/');
-  });
+  req.session.destroy(() => res.redirect('/'));
+};
+
+// Keep for backward compat — not used anymore
+exports.verifyToken = async (req, res) => {
+  return res.status(400).json({ error: 'Firebase auth disabled. Use OTP login.' });
 };

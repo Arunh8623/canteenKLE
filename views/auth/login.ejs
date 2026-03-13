@@ -3,7 +3,6 @@
 <div class="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-white flex items-center justify-center p-4">
   <div class="w-full max-w-md">
 
-    <!-- Card -->
     <div class="card p-8 animate-slide-up">
 
       <!-- Logo -->
@@ -15,78 +14,125 @@
         <p class="text-gray-500 text-sm mt-1">Sign in to start ordering</p>
       </div>
 
-      <!-- Error message -->
+      <!-- Error banner -->
       <div id="auth-error" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
         <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
         <span id="auth-error-msg"></span>
       </div>
 
-      <!-- Google sign-in button -->
-      <button id="google-btn" onclick="signInWithGoogle()"
-        class="w-full flex items-center justify-center gap-3 border-2 border-gray-200 hover:border-orange-300 hover:bg-orange-50 py-3.5 rounded-2xl font-semibold text-gray-700 transition-all duration-200 group">
-        <svg class="w-5 h-5" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-        </svg>
-        <span>Continue with Google</span>
-        <i class="fa-solid fa-arrow-right text-sm text-gray-400 group-hover:text-orange-500 group-hover:translate-x-1 transition-all"></i>
-      </button>
-
-      <!-- Divider -->
-      <div class="flex items-center gap-3 my-6">
-        <div class="flex-1 h-px bg-gray-100"></div>
-        <p class="text-xs text-gray-400 font-medium">KLE email only</p>
-        <div class="flex-1 h-px bg-gray-100"></div>
+      <!-- Success banner -->
+      <div id="auth-success" class="hidden bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3 mb-5 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check flex-shrink-0"></i>
+        <span id="auth-success-msg"></span>
       </div>
 
-      <!-- Email format info -->
-      <div class="space-y-2">
-        <div class="bg-blue-50 rounded-xl p-3.5 flex items-center gap-3">
-          <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-graduation-cap text-blue-500 text-xs"></i>
+      <!-- STEP 1: Email -->
+      <div id="step-email">
+        <div class="space-y-2 mb-6">
+          <div class="bg-blue-50 rounded-xl p-3.5 flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-graduation-cap text-blue-500 text-xs"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-blue-800">Students</p>
+              <p class="text-xs text-blue-600 font-mono mt-0.5">01fe24bci106@kletech.ac.in</p>
+            </div>
           </div>
-          <div>
-            <p class="text-xs font-semibold text-blue-800">Students</p>
-            <p class="text-xs text-blue-600 font-mono mt-0.5">01fe24bci106@kletech.ac.in</p>
+          <div class="bg-purple-50 rounded-xl p-3.5 flex items-center gap-3">
+            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <i class="fa-solid fa-chalkboard-user text-purple-500 text-xs"></i>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-purple-800">Lecturers & Staff <span class="ml-1 bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded-full text-[10px] font-bold">Priority Queue</span></p>
+              <p class="text-xs text-purple-600 font-mono mt-0.5">prakash.hegde@kletech.ac.in</p>
+            </div>
           </div>
         </div>
-        <div class="bg-purple-50 rounded-xl p-3.5 flex items-center gap-3">
-          <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <i class="fa-solid fa-chalkboard-user text-purple-500 text-xs"></i>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-purple-800">Lecturers & Staff <span class="ml-1 bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded-full text-[10px] font-bold">Priority Queue</span></p>
-            <p class="text-xs text-purple-600 font-mono mt-0.5">prakash.hegde@kletech.ac.in</p>
-          </div>
+
+        <div class="relative mb-4">
+          <i class="fa-solid fa-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          <input type="email" id="email-input" placeholder="your@kletech.ac.in"
+            class="w-full pl-11 pr-4 py-3.5 border-2 border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-orange-400 transition-colors"
+            autocomplete="email" />
         </div>
+
+        <button id="send-otp-btn" onclick="sendOTP()"
+          class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-warm">
+          <i class="fa-solid fa-paper-plane"></i>
+          Send OTP to my KLE email
+        </button>
+
+        <p class="text-center text-xs text-gray-400 mt-4">
+          A 6-digit code will be sent to your KLE email inbox.
+        </p>
       </div>
 
-      <p class="text-center text-xs text-gray-400 mt-6">
-        By logging in you agree to our terms. <br/>
-        Only @kletech.ac.in email addresses are accepted.
-      </p>
+      <!-- STEP 2: OTP + Profile (hidden initially) -->
+      <div id="step-otp" class="hidden">
+
+        <div class="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 mb-5 flex items-center gap-3">
+          <i class="fa-solid fa-envelope-open-text text-orange-500"></i>
+          <div>
+            <p class="text-xs font-semibold text-orange-800">OTP sent to</p>
+            <p class="text-xs text-orange-600 font-mono" id="otp-email-display"></p>
+          </div>
+          <button onclick="goBack()" class="ml-auto text-xs text-orange-500 hover:text-orange-700 font-semibold">Change</button>
+        </div>
+
+        <!-- OTP boxes -->
+        <div class="flex gap-2 justify-center mb-5" id="otp-boxes">
+          <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 transition-colors" />
+          <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 transition-colors" />
+          <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 transition-colors" />
+          <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 transition-colors" />
+          <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 transition-colors" />
+          <input type="text" maxlength="1" class="otp-box w-12 h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none focus:border-orange-400 transition-colors" />
+        </div>
+
+        <!-- New user profile fields (shown only for new users) -->
+        <div id="profile-fields" class="hidden space-y-3 mb-4">
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="text" id="name-input" placeholder="Your full name"
+              class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-orange-400 transition-colors" />
+          </div>
+          <div class="relative">
+            <i class="fa-solid fa-phone absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="tel" id="phone-input" placeholder="Mobile number (for order alerts)"
+              class="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-orange-400 transition-colors"
+              maxlength="10" />
+          </div>
+        </div>
+
+        <button id="verify-btn" onclick="verifyOTP()"
+          class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white py-3.5 rounded-2xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-warm">
+          <i class="fa-solid fa-lock-open"></i>
+          Verify & Login
+        </button>
+
+        <div class="text-center mt-3">
+          <span class="text-xs text-gray-400">Didn't receive it? </span>
+          <button id="resend-btn" onclick="sendOTP(true)" class="text-xs text-orange-500 hover:text-orange-700 font-semibold disabled:opacity-40" disabled>
+            Resend OTP <span id="resend-timer">(60s)</span>
+          </button>
+        </div>
+      </div>
 
       <!-- DEV ONLY: Dummy login -->
       <div class="mt-6 pt-6 border-t border-dashed border-gray-200">
         <p class="text-center text-xs text-orange-500 font-semibold mb-3">⚙️ Dev Mode — Quick Login</p>
-        <% if (locals.error) { %>
-          <p class="text-red-500 text-xs text-center mb-2"><%= error %></p>
-        <% } %>
         <form action="/auth/dummy-login" method="POST" class="flex gap-2">
           <input type="email" name="email" placeholder="your@kletech.ac.in"
-            class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400"
-            required />
+            class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400" required />
           <button type="submit"
             class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
             Login
           </button>
         </form>
       </div>
+
     </div>
 
-    <!-- Back to browse -->
     <div class="text-center mt-5">
       <a href="/" class="text-sm text-gray-500 hover:text-orange-600 transition-colors">
         <i class="fa-solid fa-arrow-left mr-1.5"></i>Browse menu without logging in
@@ -95,80 +141,184 @@
   </div>
 </div>
 
-<!-- Firebase Client SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
 <script>
-  firebase.initializeApp({
-    apiKey:            "<%= firebaseConfig.apiKey %>",
-    authDomain:        "<%= firebaseConfig.authDomain %>",
-    storageBucket:     "<%= firebaseConfig.storageBucket %>",
-    messagingSenderId: "<%= firebaseConfig.messagingSenderId %>",
-    appId:             "<%= firebaseConfig.appId %>",
-  });
-
-  const auth     = firebase.auth();
-  // NOTE: removed hd restriction — it was causing popup to close prematurely on college accounts
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope('email');
-  provider.addScope('profile');
+  let currentEmail = '';
+  let resendInterval = null;
 
   function showError(msg) {
+    document.getElementById('auth-success').classList.add('hidden');
     document.getElementById('auth-error-msg').textContent = msg;
     document.getElementById('auth-error').classList.remove('hidden');
-    document.getElementById('auth-error').classList.add('flex');
-  }
-  function showLoading() {
-    document.getElementById('google-btn').disabled = true;
-    document.getElementById('google-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Signing in...';
-  }
-  function resetBtn() {
-    document.getElementById('google-btn').disabled = false;
-    document.getElementById('google-btn').innerHTML = '<svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg><span>Continue with Google</span>';
   }
 
-  async function verifyWithServer(user) {
+  function showSuccess(msg) {
+    document.getElementById('auth-error').classList.add('hidden');
+    document.getElementById('auth-success-msg').textContent = msg;
+    document.getElementById('auth-success').classList.remove('hidden');
+  }
+
+  function hideMessages() {
+    document.getElementById('auth-error').classList.add('hidden');
+    document.getElementById('auth-success').classList.add('hidden');
+  }
+
+  function setLoading(btnId, loading, text) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.innerHTML = loading
+      ? '<i class="fa-solid fa-spinner fa-spin"></i> ' + text
+      : btn.dataset.original || btn.innerHTML;
+  }
+
+  async function sendOTP(resend = false) {
+    hideMessages();
+    const emailInput = document.getElementById('email-input');
+    const email = resend ? currentEmail : emailInput.value.trim().toLowerCase();
+
+    if (!email || !email.endsWith('@kletech.ac.in')) {
+      showError('Please enter a valid @kletech.ac.in email address.');
+      return;
+    }
+
+    const btn = document.getElementById(resend ? 'resend-btn' : 'send-otp-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+
     try {
-      const idToken = await user.getIdToken(true);
-      const res = await fetch('/auth/verify', {
+      const res = await fetch('/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      console.log('Server response:', res.status, data);
-      if (!res.ok) {
-        await auth.signOut();
-        showError(data.error || 'Login failed');
-        resetBtn();
+
+      if (!data.success) {
+        showError(data.error || 'Failed to send OTP.');
+        btn.disabled = false;
+        btn.innerHTML = resend ? 'Resend OTP' : '<i class="fa-solid fa-paper-plane"></i> Send OTP to my KLE email';
         return;
       }
-      window.location.href = '/';
-    } catch(err) {
-      await auth.signOut();
-      showError(err.message || 'Login failed');
-      resetBtn();
+
+      currentEmail = email;
+      document.getElementById('otp-email-display').textContent = email;
+      document.getElementById('step-email').classList.add('hidden');
+      document.getElementById('step-otp').classList.remove('hidden');
+      showSuccess('OTP sent! Check your KLE email inbox.');
+
+      // Focus first OTP box
+      document.querySelectorAll('.otp-box')[0].focus();
+
+      // Start resend countdown
+      startResendTimer();
+    } catch (err) {
+      showError('Network error. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = resend ? 'Resend OTP' : '<i class="fa-solid fa-paper-plane"></i> Send OTP to my KLE email';
     }
   }
 
-  async function signInWithGoogle() {
-    showLoading();
-    try {
-      const result = await auth.signInWithPopup(provider);
-      console.log('Popup success:', result.user.email);
-      await verifyWithServer(result.user);
-    } catch(err) {
-      console.log('Popup error:', err.code, err.message);
-      resetBtn();
-      if (err.code === 'auth/popup-closed-by-user') {
-        showError('Sign-in cancelled. Please try again.');
-      } else if (err.code === 'auth/popup-blocked') {
-        showError('Popup blocked. Please allow popups and try again.');
-      } else {
-        showError(err.message || 'Login failed');
+  function startResendTimer() {
+    let seconds = 60;
+    const resendBtn = document.getElementById('resend-btn');
+    const timerSpan = document.getElementById('resend-timer');
+    resendBtn.disabled = true;
+
+    if (resendInterval) clearInterval(resendInterval);
+    resendInterval = setInterval(() => {
+      seconds--;
+      timerSpan.textContent = `(${seconds}s)`;
+      if (seconds <= 0) {
+        clearInterval(resendInterval);
+        resendBtn.disabled = false;
+        timerSpan.textContent = '';
       }
+    }, 1000);
+  }
+
+  async function verifyOTP() {
+    hideMessages();
+    const boxes   = document.querySelectorAll('.otp-box');
+    const otp     = Array.from(boxes).map(b => b.value).join('');
+    const name    = document.getElementById('name-input').value.trim();
+    const phone   = document.getElementById('phone-input').value.trim();
+
+    if (otp.length !== 6) {
+      showError('Please enter the complete 6-digit OTP.');
+      return;
+    }
+
+    document.getElementById('verify-btn').disabled = true;
+    document.getElementById('verify-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+
+    try {
+      const res = await fetch('/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentEmail, otp, name, phone }),
+      });
+      const data = await res.json();
+
+      if (data.needsProfile) {
+        // Show profile fields for new users
+        document.getElementById('profile-fields').classList.remove('hidden');
+        showError('Please enter your name to complete registration.');
+        document.getElementById('verify-btn').disabled = false;
+        document.getElementById('verify-btn').innerHTML = '<i class="fa-solid fa-lock-open"></i> Verify & Login';
+        document.getElementById('name-input').focus();
+        return;
+      }
+
+      if (!data.success) {
+        showError(data.error || 'Verification failed.');
+        document.getElementById('verify-btn').disabled = false;
+        document.getElementById('verify-btn').innerHTML = '<i class="fa-solid fa-lock-open"></i> Verify & Login';
+        // Shake OTP boxes
+        boxes.forEach(b => { b.value = ''; b.classList.add('border-red-400'); });
+        setTimeout(() => boxes.forEach(b => b.classList.remove('border-red-400')), 1000);
+        boxes[0].focus();
+        return;
+      }
+
+      showSuccess('Login successful! Redirecting...');
+      setTimeout(() => { window.location.href = '/'; }, 800);
+    } catch (err) {
+      showError('Network error. Please try again.');
+      document.getElementById('verify-btn').disabled = false;
+      document.getElementById('verify-btn').innerHTML = '<i class="fa-solid fa-lock-open"></i> Verify & Login';
     }
   }
+
+  function goBack() {
+    hideMessages();
+    document.getElementById('step-otp').classList.add('hidden');
+    document.getElementById('step-email').classList.remove('hidden');
+    document.querySelectorAll('.otp-box').forEach(b => b.value = '');
+    if (resendInterval) clearInterval(resendInterval);
+  }
+
+  // OTP box auto-advance
+  document.querySelectorAll('.otp-box').forEach((box, i, boxes) => {
+    box.addEventListener('input', (e) => {
+      const val = e.target.value;
+      if (val && i < boxes.length - 1) boxes[i + 1].focus();
+      if (val && i === boxes.length - 1) verifyOTP();
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+    });
+    box.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+      paste.split('').forEach((char, j) => { if (boxes[j]) boxes[j].value = char; });
+      if (paste.length === 6) verifyOTP();
+    });
+  });
+
+  // Enter key on email input
+  document.getElementById('email-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendOTP();
+  });
 </script>
+
 </body>
 </html>
