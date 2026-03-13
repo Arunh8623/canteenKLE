@@ -1,0 +1,33 @@
+[33m37bcfc9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix: force session save before login response
+[33m6f7003b[m fix: remove push routes
+[33m89961c2[m fix: remove push routes, back to working state
+[33me346f39[m fix: remove duplicate pushRoutes declaration
+[33m229d4ba[m feat: web push notifications for order ready
+[33m9119d55[m feat: email notifications for order confirmed and order ready
+[33mf02945f[m feat: simple email + password login (no Firebase, no OTP)
+[33m70ee2f5[m feat: simple email + password login (no Firebase, no OTP)
+[33mb753a64[m fix: use Resend HTTP API for OTP emails
+[33m4aaf892[m feat: replace Firebase with OTP email login
+[33m41cc22c[m fix: revert to popup auth with correct authDomain
+[33mc705955[m fix: set authDomain to render domain
+[33m2890662[m fix: use redirect instead of popup for Google auth
+[33m9644b01[m feat: switch to Groq AI (free, no billing)
+[33m87130f1[m fix: use gemini-2.0-flash model
+[33mbb2e622[m install gemini package
+[33md2620c1[m feat: switch from OpenAI to Gemini AI (free)
+[33mb8f527a[m fix: serialize razorpay error properly
+[33m000843b[m fix: better error handling in razorpay order
+[33m71d9ca8[m fix: lazy razorpay initialization
+[33m13248f1[m fix: trust proxy for Render HTTPS sessions
+[33m2ee6148[m fix: cookie sameSite none for HTTPS sessions
+[33m00fe276[m debug: show full error in alert
+[33mbe71d57[m fix: MySQL session store + cookie sameSite
+[33m787b4c1[m fix: use MySQL session store for production
+[33m7bf08d8[m gitignore edit
+[33m5c3b493[m move tailwindcss cli to dependencies
+[33m54af9d8[m add compiled tailwind output.css
+[33m2c4d80f[m hi
+[33mfeffe6a[m hi anna
+[33m4015c53[m something
+[33m68f5e83[m view admin error fixed
+[33mde6b1bd[m Initial commit

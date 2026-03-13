@@ -51,6 +51,7 @@ exports.confirmOrder = async (req, res) => {
 
     const total   = cartItems.reduce((s, i) => s + parseFloat(i.subtotal), 0);
     const stallId = cartItems[0].stall_id;
+    const stall   = await Stall.findById(stallId);
 
     // Create order with priority
     const { id: orderId, uuid } = await Order.create({
@@ -82,15 +83,12 @@ exports.confirmOrder = async (req, res) => {
     const orderDetails = await Order.findById(orderId);
     try { socketConfig.notifyAdmin(stallId, { ...orderDetails, queue_position: queuePos }); } catch {}
 
-    // Send confirmation email
+    // Send confirmation email using cart snapshot (before it was cleared)
     if (req.user.email) {
-      const cartItemsForEmail = await db.query(
-        'SELECT ci.quantity, mi.name, (ci.quantity * mi.price) as subtotal FROM cart_items ci JOIN menu_items mi ON ci.menu_item_id = mi.id WHERE ci.user_id = ? AND mi.stall_id = ?',
-        [req.user.id, stallId]
-      ).then(([rows]) => rows).catch(() => []);
+      const emailItems = cartItems.map(i => ({ name: i.name, quantity: i.quantity, subtotal: i.subtotal }));
       orderConfirmedEmail(
-        req.user.email, req.user.name, uuid, stall.name, queuePos,
-        cartItemsForEmail, total
+        req.user.email, req.user.name, uuid, stall?.name || 'Canteen', queuePos,
+        emailItems, total
       ).catch(console.warn);
     }
 
